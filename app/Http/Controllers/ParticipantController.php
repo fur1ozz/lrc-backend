@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CrewGroupInvolvement;
+use App\Models\Group;
 use App\Models\Participant;
 use App\Models\Rally;
 use App\Models\Crew;
-use App\Models\CoDriverInRally;
 use Illuminate\Http\Request;
 
 class ParticipantController extends Controller
@@ -42,16 +43,16 @@ class ParticipantController extends Controller
         }
 
         $crews = Crew::with(['team'])
-        ->where('rally_id', $rally->id)
+            ->where('rally_id', $rally->id)
             ->get();
 
         $crewWithParticipants = $crews->map(function ($crew) use ($rally) {
-//            $coDriverId = CoDriverInRally::where('driver_id', $crew->driver_id)
-//                ->where('rally_id', $rally->id)
-//                ->value('co_driver_id');
 
             $driver = Participant::find($crew->driver_id);
             $coDriver = Participant::find($crew->co_driver_id);
+
+            $groupIds = CrewGroupInvolvement::where('crew_id', $crew->id)->pluck('group_id');
+            $groups = Group::whereIn('id', $groupIds)->get();
 
             return [
                 'crew' => [
@@ -60,6 +61,12 @@ class ParticipantController extends Controller
                     'car' => $crew->car,
                     'drive_type' => $crew->drive_type,
                     'drive_class' => $crew->drive_class,
+                    'groups' => $groups->map(function ($group) {
+                        return [
+                            'id' => $group->id,
+                            'group_name' => $group->group_name,
+                        ];
+                    }),
                 ],
                 'team' => [
                     'id' => $crew->team->id,

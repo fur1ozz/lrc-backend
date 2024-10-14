@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             TeamSeeder::class,
             ParticipantSeeder::class,
             CrewSeeder::class,
+            PrevWinnerSeeder::class,
         ]);
     }
 }

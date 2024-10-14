@@ -8,12 +8,14 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\StageController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\ParticipantController;
+use App\Http\Controllers\PrevWinnerController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
 Route::get('rallies', [RallyController::class, 'index']);
+Route::get('previousWinner', [PrevWinnerController::class, 'getLastWinner']);
 
 Route::get('stagesById/{rallyId}', [StageController::class, 'getStagesByRallyId']);
 Route::get('stages/{seasonYear}/{rallyName}', [StageController::class, 'getStagesByRallyTagAndSeason']);
