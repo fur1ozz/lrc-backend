@@ -22,7 +22,7 @@ Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDo
 
 
 Route::get('news/{seasonYear}/{rallyTag}', [NewsController::class, 'getNewsBySeasonAndRally']);
-Route::get('/participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonAndRally']);
+Route::get('participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonAndRally']);
 
 
 

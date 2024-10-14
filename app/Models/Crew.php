@@ -11,6 +11,7 @@ class Crew extends Model
 
     protected $fillable = [
         'driver_id',
+        'co_driver_id',
         'team_id',
         'rally_id',
         'crew_number',
@@ -22,6 +23,10 @@ class Crew extends Model
     public function driver()
     {
         return $this->belongsTo(Participant::class, 'driver_id');
+    }
+    public function coDriver()
+    {
+        return $this->belongsTo(Participant::class, 'co_driver_id');
     }
 
     public function team()

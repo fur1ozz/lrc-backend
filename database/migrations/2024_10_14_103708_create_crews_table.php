@@ -11,6 +11,7 @@ class CreateCrewsTable extends Migration
         Schema::create('crews', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('driver_id');
+            $table->unsignedBigInteger('co_driver_id');
             $table->unsignedBigInteger('team_id');
             $table->unsignedBigInteger('rally_id');
             $table->string('crew_number');
@@ -20,6 +21,7 @@ class CreateCrewsTable extends Migration
             $table->timestamps();
 
             $table->foreign('driver_id')->references('id')->on('participants')->onDelete('cascade');
+            $table->foreign('co_driver_id')->references('id')->on('participants')->onDelete('cascade');
             $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
             $table->foreign('rally_id')->references('id')->on('rallies')->onDelete('cascade');
         });

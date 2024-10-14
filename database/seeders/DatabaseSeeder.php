@@ -24,7 +24,6 @@ class DatabaseSeeder extends Seeder
             TeamSeeder::class,
             ParticipantSeeder::class,
             CrewSeeder::class,
-            CoDriverInRallySeeder::class,
         ]);
     }
 }

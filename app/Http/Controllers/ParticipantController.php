@@ -41,28 +41,49 @@ class ParticipantController extends Controller
             return response()->json(['message' => 'Rally not found for this season'], 404);
         }
 
-        $crews = Crew::with(['team']) // Load team relationship
+        $crews = Crew::with(['team'])
         ->where('rally_id', $rally->id)
             ->get();
 
-        // Prepare an array to hold crew information with co-driver IDs
         $crewWithParticipants = $crews->map(function ($crew) use ($rally) {
-            // Get the co-driver ID based on the driver_id and rally_id
-            $coDrivers = CoDriverInRally::where('driver_id', $crew->driver_id)
-                ->where('rally_id', $rally->id)
-                ->pluck('co_driver_id');
+//            $coDriverId = CoDriverInRally::where('driver_id', $crew->driver_id)
+//                ->where('rally_id', $rally->id)
+//                ->value('co_driver_id');
 
-            // Retrieve participant data for the driver
             $driver = Participant::find($crew->driver_id);
+            $coDriver = Participant::find($crew->co_driver_id);
 
-            // Retrieve participant data for each co-driver ID
-            $coDriverDetails = Participant::whereIn('id', $coDrivers)->get();
-
-            // Attach driver and co-driver details to the crew data
             return [
-                'crew' => $crew,
-                'driver' => $driver, // Participant data for the driver
-                'co_drivers' => $coDriverDetails // Collection of participant data for co-drivers
+                'crew' => [
+                    'id' => $crew->id,
+                    'crew_number' => $crew->crew_number,
+                    'car' => $crew->car,
+                    'drive_type' => $crew->drive_type,
+                    'drive_class' => $crew->drive_class,
+                ],
+                'team' => [
+                    'id' => $crew->team->id,
+                    'team_name' => $crew->team->team_name,
+                ],
+                'driver' => [
+                    'id' => $driver->id,
+                    'name' => $driver->name,
+                    'surname' => $driver->surname,
+                    'desc' => $driver->desc,
+                    'nationality' => $driver->nationality,
+                    'image' => $driver->image,
+                ],
+                'co_driver' => $coDriver ? [
+                    'id' => $coDriver->id,
+                    'name' => $coDriver->name,
+                    'surname' => $coDriver->surname,
+                    'desc' => $coDriver->desc,
+                    'nationality' => $coDriver->nationality,
+                    'image' => $coDriver->image,
+                ] : null
+
+
+
             ];
         });
 
