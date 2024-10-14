@@ -7,6 +7,7 @@ use App\Http\Controllers\RallyController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\StageController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\ParticipantController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -21,5 +22,7 @@ Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDo
 
 
 Route::get('news/{seasonYear}/{rallyTag}', [NewsController::class, 'getNewsBySeasonAndRally']);
+Route::get('/participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonAndRally']);
+
 
 
