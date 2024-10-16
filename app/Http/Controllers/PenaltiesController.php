@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Participant;
 use App\Models\Penalties;
 use Illuminate\Http\Request;
 use App\Models\Crew;
@@ -11,7 +12,6 @@ class PenaltiesController extends Controller
 {
     public function getPenaltiesByRally($seasonYear, $rallyTag)
     {
-        // Find the rally based on the provided tag and season year
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
                 $query->where('year', $seasonYear);
@@ -21,18 +21,36 @@ class PenaltiesController extends Controller
             return response()->json(['message' => 'Rally not found for this season'], 404);
         }
 
-        // Get all crews associated with the rally
-        $crews = Crew::where('rally_id', $rally->id)->get();
+        $crews = Crew::with(['team'])
+            ->where('rally_id', $rally->id)
+            ->get();
 
-        // Prepare an array to hold the penalties
         $penaltiesData = $crews->map(function ($crew) {
-            // Get penalties for the current crew
             $penalties = Penalties::where('crew_id', $crew->id)->get();
 
-            // Map penalties to a more structured array
+            if ($penalties->isEmpty()) {
+                return null;
+            }
+
+            $driver = Participant::find($crew->driver_id);
+            $coDriver = Participant::find($crew->co_driver_id);
+
             return [
                 'crew_id' => $crew->id,
-                'crew_number' => $crew->crew_number, // Assuming you have a crew_number field
+                'crew_number' => $crew->crew_number,
+                'car' => $crew->car,
+                'driver' => [
+                    'id' => $driver->id,
+                    'name' => $driver->name,
+                    'surname' => $driver->surname,
+                    'nationality' => $driver->nationality,
+                ],
+                'co_driver' => $coDriver ? [
+                    'id' => $coDriver->id,
+                    'name' => $coDriver->name,
+                    'surname' => $coDriver->surname,
+                    'nationality' => $coDriver->nationality,
+                ] : null,
                 'penalties' => $penalties->map(function ($penalty) {
                     return [
                         'stage_id' => $penalty->stage_id,
@@ -40,7 +58,15 @@ class PenaltiesController extends Controller
                         'penalty_amount' => $penalty->penalty_amount,
                     ];
                 }),
+                'team' => [
+                    'id' => $crew->team->id,
+                    'team_name' => $crew->team->team_name,
+                ],
             ];
+        });
+
+        $penaltiesData = $penaltiesData->filter(function ($item) {
+            return $item !== null;
         });
 
         return response()->json($penaltiesData);
