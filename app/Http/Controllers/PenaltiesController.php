@@ -39,6 +39,7 @@ class PenaltiesController extends Controller
                 'crew_id' => $crew->id,
                 'crew_number' => $crew->crew_number,
                 'car' => $crew->car,
+                'drive_type' => $crew->drive_type,
                 'driver' => [
                     'id' => $driver->id,
                     'name' => $driver->name,
@@ -69,8 +70,9 @@ class PenaltiesController extends Controller
             return $item !== null;
         });
 
-        return response()->json($penaltiesData);
+        return response()->json($penaltiesData->values()); // Use values() to return indexed array
     }
+
 
     public function index()
     {
