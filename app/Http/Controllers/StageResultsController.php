@@ -88,11 +88,7 @@ class StageResultsController extends Controller
                             'name' => $group->group_name,
                         ];
                     }),
-                    'stage_result' => [
-                        'crew_start_time' => $result->crew_start_time,
-                        'time_taken' => $result->time_taken,
-                        'avg_speed' => $result->avg_speed,
-                    ],
+                    'time_taken' => $result->time_taken,
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
                     'overall_time_until_stage' => $overallResult['total_time'],
                     'overall_penalties_until_stage' => $overallResult['total_penalties'],
@@ -192,9 +188,9 @@ class StageResultsController extends Controller
 
         // Return formatted time
         if ($hours > 0) {
-            return sprintf('%02d:%02d:%02d.%03d', $hours, $remainingMinutes, $remainingSeconds, $milliseconds);
+            return sprintf('%02d:%02d:%02d.%02d', $hours, $remainingMinutes, $remainingSeconds, $milliseconds);
         } else {
-            return sprintf('%02d:%02d.%03d', $remainingMinutes, $remainingSeconds, $milliseconds);
+            return sprintf('%02d:%02d.%02d', $remainingMinutes, $remainingSeconds, $milliseconds);
         }
     }
 }

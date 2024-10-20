@@ -139,6 +139,6 @@ class StageResultsSeeder extends Seeder
         $remainingSeconds = $seconds % 60;
 
         // Return formatted time
-        return sprintf('%02d:%02d.%03d', $minutes, $remainingSeconds, $milliseconds);
+        return sprintf('%02d:%02d.%02d', $minutes, $remainingSeconds, $milliseconds);
     }
 }
