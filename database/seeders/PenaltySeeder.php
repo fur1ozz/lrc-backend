@@ -7,14 +7,13 @@ use App\Models\Crew;
 use App\Models\Stage;
 use App\Models\Penalties;
 use App\Models\Participant;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class PenaltySeeder extends Seeder
 {
     public function run()
     {
-        $json = Storage::get('penalty_data.json');  // Ensure you have crew_data.json in storage/app
+        $json = Storage::get('penalty_data.json');  // Ensure you have penalty_data.json in storage/app
         $penaltiesData = json_decode($json, true);
 
         $rallyId = 4;  // We're working with rally ID 4
@@ -55,9 +54,24 @@ class PenaltySeeder extends Seeder
                             if (preg_match('/[STC]-([0-9]+)/', $penalty['reason'], $matches)) {
                                 $stageNumber = $matches[1];
 
+                                // Split the penalty time into minutes and seconds.milliseconds
                                 $penaltyTimeParts = explode(':', $penalty['penaltyTime']);
-                                $penaltyTime = sprintf('%02d:%02d:%02d', 0, (int)$penaltyTimeParts[0], (int)round($penaltyTimeParts[1])); // Ensuring correct time format
+                                $minutes = (int)$penaltyTimeParts[0];
 
+                                // Handle the seconds and milliseconds
+                                if (isset($penaltyTimeParts[1])) {
+                                    // Handle the case where seconds may contain milliseconds
+                                    $secondsParts = explode('.', $penaltyTimeParts[1]);
+                                    $seconds = (int)$secondsParts[0]; // Get the whole seconds
+                                    $milliseconds = isset($secondsParts[1]) ? str_pad($secondsParts[1], 3, '0') : '000'; // Ensure milliseconds are 3 digits
+                                } else {
+                                    // If only minutes are provided, assume seconds and milliseconds are 0
+                                    $seconds = 0;
+                                    $milliseconds = '000';
+                                }
+
+                                // Format the penalty amount as 'MM:SS.sss'
+                                $penaltyTime = sprintf('%02d:%02d.%s', $minutes, $seconds, $milliseconds);
 
                                 // Find the stage ID based on rally_id and stage_number
                                 $stage = Stage::where('rally_id', $rallyId)

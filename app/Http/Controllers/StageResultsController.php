@@ -63,7 +63,6 @@ class StageResultsController extends Controller
                     ];
                 });
 
-                // Get overall results until the current stage (including penalties)
                 $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
 
                 return [
@@ -98,13 +97,13 @@ class StageResultsController extends Controller
                     'overall_time_until_stage' => $overallResult['total_time'],
                     'overall_penalties_until_stage' => $overallResult['total_penalties'],
                     'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
-//                    'previous_stage_times' => $overallResult['previous_stage_times']
                 ];
             }),
         ];
 
         return response()->json($response);
     }
+
     private function calculateOverallTimeAndPenalties($rallyId, $stageNumber, $crewId)
     {
         $stages = Stage::where('rally_id', $rallyId)
@@ -113,7 +112,6 @@ class StageResultsController extends Controller
 
         $totalTime = 0;
         $totalPenalties = 0;
-        $previousStageTimes = [];
 
         foreach ($stages as $stage) {
             $stageResult = StageResults::where('crew_id', $crewId)
@@ -134,67 +132,69 @@ class StageResultsController extends Controller
                 }
 
                 $totalPenalties += $penaltyTime;
-
-                $previousStageTimes[] = [
-                    'stage_id' => $stage->id,
-                    'stage_number' => $stage->stage_number,
-                    'time_taken' => $this->convertSecondsToTime($timeTakenInSeconds),
-                    'penalties' => $penalties->isNotEmpty() ? $penalties->map(function ($penalty) {
-                        return [
-                            'penalty_reason' => $penalty->penalty_type,
-                            'penalty_time' => $penalty->penalty_amount,
-                        ];
-                    }) : null
-                ];
             }
         }
 
-        // Calculate total time including penalties
         $totalTimeWithPenalties = $totalTime + $totalPenalties;
 
         return [
             'total_time' => $this->convertSecondsToTime($totalTime),
             'total_penalties' => $this->convertSecondsToTime($totalPenalties),
             'total_time_with_penalties' => $this->convertSecondsToTime($totalTimeWithPenalties),
-//            'previous_stage_times' => $previousStageTimes
         ];
     }
 
-    /**
-     * Convert time in "HH:MM:SS" or "MM:SS" format to seconds.
-     */
     private function convertTimeToSeconds($time)
     {
         $parts = explode(':', $time);
         $seconds = 0;
 
-        if (count($parts) == 3) {
-            // HH:MM:SS
-            $seconds += $parts[0] * 3600; // Hours to seconds
-            $seconds += $parts[1] * 60;   // Minutes to seconds
-            $seconds += $parts[2];        // Seconds
-        } elseif (count($parts) == 2) {
-            // MM:SS
-            $seconds += $parts[0] * 60;   // Minutes to seconds
-            $seconds += $parts[1];        // Seconds
+        // Assuming the format is MM:SS.mm or SS.mm
+        if (count($parts) == 2) {
+            // MM:SS.mm
+            $seconds += $parts[0] * 60; // Convert minutes to seconds
+
+            // Check if milliseconds are present
+            if (strpos($parts[1], '.') !== false) {
+                $subParts = explode('.', $parts[1]);
+                $seconds += (float)$subParts[0]; // Add seconds
+                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
+                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
+            } else {
+                $seconds += (float)$parts[1]; // Add seconds
+            }
+        } elseif (count($parts) == 1) {
+            // Just SS.mm
+            if (strpos($parts[0], '.') !== false) {
+                $subParts = explode('.', $parts[0]);
+                $seconds += (float)$subParts[0]; // Add seconds
+                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
+                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
+            } else {
+                $seconds += (float)$parts[0]; // Just seconds
+            }
         }
 
         return $seconds;
     }
 
     /**
-     * Convert seconds to "HH:MM:SS" or "MM:SS" format.
+     * Convert seconds to "MM:SS.mm" format.
      */
     private function convertSecondsToTime($seconds)
     {
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
+        $milliseconds = ($seconds - floor($seconds)) * 1000; // Get milliseconds
+        $seconds = floor($seconds);
+        $minutes = floor($seconds / 60);
         $remainingSeconds = $seconds % 60;
+        $hours = floor($minutes / 60);
+        $remainingMinutes = $minutes % 60;
 
+        // Return formatted time
         if ($hours > 0) {
-            return sprintf('%02d:%02d:%02d', $hours, $minutes, $remainingSeconds);
+            return sprintf('%02d:%02d:%02d.%03d', $hours, $remainingMinutes, $remainingSeconds, $milliseconds);
         } else {
-            return sprintf('%02d:%02d', $minutes, $remainingSeconds);
+            return sprintf('%02d:%02d.%03d', $remainingMinutes, $remainingSeconds, $milliseconds);
         }
     }
 }

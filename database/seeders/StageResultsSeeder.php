@@ -71,6 +71,9 @@ class StageResultsSeeder extends Seeder
                             // Convert stage time to seconds for calculation
                             $timeInSeconds = $this->convertTimeToSeconds($stageTime['time']);
 
+                            // Convert the time back to MM:SS.mm format for storage
+                            $formattedTime = $this->convertSecondsToFormattedTime($timeInSeconds);
+
                             // Calculate average speed (distance in km / time in hours)
                             $distanceKm = $stage->distance_km;
                             $timeInHours = $timeInSeconds / 3600;
@@ -82,7 +85,7 @@ class StageResultsSeeder extends Seeder
                                     'crew_id' => $crew->id,
                                     'stage_id' => $stage->id,
                                     'crew_start_time' => null, // Assuming no start time provided
-                                    'time_taken' => $stageTime['time'], // Stage time from JSON
+                                    'time_taken' => $formattedTime, // Use formatted time
                                     'avg_speed' => round($avgSpeed, 2), // Round to 2 decimal places
                                 ]);
 
@@ -111,11 +114,31 @@ class StageResultsSeeder extends Seeder
             $totalSeconds += intval($timeParts[1]) * 60;   // Minutes to seconds
             $totalSeconds += floatval($timeParts[2]);      // Seconds
         } elseif (count($timeParts) == 2) {
-            // Format mm:ss
+            // Format mm:ss or mm:ss.sss
             $totalSeconds += intval($timeParts[0]) * 60;   // Minutes to seconds
-            $totalSeconds += floatval($timeParts[1]);      // Seconds
+
+            // Handle seconds with milliseconds
+            if (strpos($timeParts[1], '.') !== false) {
+                $subParts = explode('.', $timeParts[1]);
+                $totalSeconds += intval($subParts[0]); // Seconds
+                $totalSeconds += isset($subParts[1]) ? floatval($subParts[1]) / 1000 : 0; // Milliseconds to seconds
+            } else {
+                $totalSeconds += floatval($timeParts[1]); // Just seconds
+            }
         }
 
         return $totalSeconds;
+    }
+
+    // Function to convert seconds to MM:SS.mm format
+    private function convertSecondsToFormattedTime($seconds)
+    {
+        $milliseconds = ($seconds - floor($seconds)) * 1000; // Get milliseconds
+        $seconds = floor($seconds);
+        $minutes = floor($seconds / 60);
+        $remainingSeconds = $seconds % 60;
+
+        // Return formatted time
+        return sprintf('%02d:%02d.%03d', $minutes, $remainingSeconds, $milliseconds);
     }
 }
