@@ -63,7 +63,8 @@ class StageResultsController extends Controller
                     ];
                 });
 
-                $previousStageResults = $this->getPreviousStagesForCrew($rally->id, $stageNumber, $crew->id);
+                // Get overall results until the current stage (including penalties)
+                $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
 
                 return [
                     'crew_id' => $crew->id,
@@ -94,89 +95,106 @@ class StageResultsController extends Controller
                         'avg_speed' => $result->avg_speed,
                     ],
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
-                    'previous_stage_times' => $previousStageResults // Include the previous stage times
+                    'overall_time_until_stage' => $overallResult['total_time'],
+                    'overall_penalties_until_stage' => $overallResult['total_penalties'],
+                    'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
+//                    'previous_stage_times' => $overallResult['previous_stage_times']
                 ];
             }),
         ];
 
         return response()->json($response);
     }
-
-    private function getPreviousStagesForCrew($rallyId, $stageNumber, $crewId)
+    private function calculateOverallTimeAndPenalties($rallyId, $stageNumber, $crewId)
     {
-        // Get all stages before the current stage number
-        $previousStages = Stage::where('rally_id', $rallyId)
-            ->where('stage_number', '<', $stageNumber)
+        $stages = Stage::where('rally_id', $rallyId)
+            ->where('stage_number', '<=', $stageNumber)
             ->get();
 
-        $previousResults = [];
+        $totalTime = 0;
+        $totalPenalties = 0;
+        $previousStageTimes = [];
 
-        foreach ($previousStages as $stage) {
+        foreach ($stages as $stage) {
             $stageResult = StageResults::where('crew_id', $crewId)
                 ->where('stage_id', $stage->id)
                 ->first();
 
             if ($stageResult) {
-                $previousResults[] = [
+                $timeTakenInSeconds = $this->convertTimeToSeconds($stageResult->time_taken);
+                $totalTime += $timeTakenInSeconds;
+
+                $penalties = Penalties::where('crew_id', $crewId)
+                    ->where('stage_id', $stage->id)
+                    ->get();
+
+                $penaltyTime = 0;
+                foreach ($penalties as $penalty) {
+                    $penaltyTime += $this->convertTimeToSeconds($penalty->penalty_amount);
+                }
+
+                $totalPenalties += $penaltyTime;
+
+                $previousStageTimes[] = [
                     'stage_id' => $stage->id,
                     'stage_number' => $stage->stage_number,
-                    'time_taken' => $stageResult->time_taken,
+                    'time_taken' => $this->convertSecondsToTime($timeTakenInSeconds),
+                    'penalties' => $penalties->isNotEmpty() ? $penalties->map(function ($penalty) {
+                        return [
+                            'penalty_reason' => $penalty->penalty_type,
+                            'penalty_time' => $penalty->penalty_amount,
+                        ];
+                    }) : null
                 ];
             }
         }
 
-        return $previousResults;
-    }
-    public function index()
-    {
-        //
+        // Calculate total time including penalties
+        $totalTimeWithPenalties = $totalTime + $totalPenalties;
+
+        return [
+            'total_time' => $this->convertSecondsToTime($totalTime),
+            'total_penalties' => $this->convertSecondsToTime($totalPenalties),
+            'total_time_with_penalties' => $this->convertSecondsToTime($totalTimeWithPenalties),
+//            'previous_stage_times' => $previousStageTimes
+        ];
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Convert time in "HH:MM:SS" or "MM:SS" format to seconds.
      */
-    public function create()
+    private function convertTimeToSeconds($time)
     {
-        //
+        $parts = explode(':', $time);
+        $seconds = 0;
+
+        if (count($parts) == 3) {
+            // HH:MM:SS
+            $seconds += $parts[0] * 3600; // Hours to seconds
+            $seconds += $parts[1] * 60;   // Minutes to seconds
+            $seconds += $parts[2];        // Seconds
+        } elseif (count($parts) == 2) {
+            // MM:SS
+            $seconds += $parts[0] * 60;   // Minutes to seconds
+            $seconds += $parts[1];        // Seconds
+        }
+
+        return $seconds;
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Convert seconds to "HH:MM:SS" or "MM:SS" format.
      */
-    public function store(Request $request)
+    private function convertSecondsToTime($seconds)
     {
-        //
-    }
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        $remainingSeconds = $seconds % 60;
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(StageResults $stageResults)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(StageResults $stageResults)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, StageResults $stageResults)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(StageResults $stageResults)
-    {
-        //
+        if ($hours > 0) {
+            return sprintf('%02d:%02d:%02d', $hours, $minutes, $remainingSeconds);
+        } else {
+            return sprintf('%02d:%02d', $minutes, $remainingSeconds);
+        }
     }
 }
