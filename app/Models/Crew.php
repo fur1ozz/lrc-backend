@@ -38,5 +38,9 @@ class Crew extends Model
     {
         return $this->belongsTo(Rally::class, 'rally_id');
     }
+    public function stageResults()
+    {
+        return $this->hasMany(StageResults::class, 'crew_id');
+    }
 }
 

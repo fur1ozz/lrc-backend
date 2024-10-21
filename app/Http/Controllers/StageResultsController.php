@@ -34,12 +34,20 @@ class StageResultsController extends Controller
         }
 
         $results = StageResults::where('stage_id', $stage->id)->get();
+        $stageCount = Stage::where('rally_id', $rally->id)->count();
+
+        $sortedResults = $results->sort(function ($a, $b) {
+            $timeA = $this->convertTimeToSeconds($a->time_taken);
+            $timeB = $this->convertTimeToSeconds($b->time_taken);
+            return $timeA <=> $timeB;
+        });
 
         $response = [
             'stage_id' => $stage->id,
             'stage_name' => $stage->stage_name,
             'stage_number' => $stage->stage_number,
-            'results' => $results->map(function ($result) use ($stage, $stageNumber, $rally) {
+            'stage_count' => $stageCount,
+            'results' => $sortedResults->map(function ($result) use ($stage, $stageNumber, $rally) {
                 $crew = Crew::find($result->crew_id);
 
                 if (!$crew) {
@@ -94,7 +102,7 @@ class StageResultsController extends Controller
                     'overall_penalties_until_stage' => $overallResult['total_penalties'],
                     'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
                 ];
-            }),
+            })->values(),
         ];
 
         return response()->json($response);
