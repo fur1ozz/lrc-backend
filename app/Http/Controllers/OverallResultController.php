@@ -8,7 +8,6 @@ use App\Models\Participant;
 use App\Models\Penalties;
 use App\Models\Rally;
 use App\Models\Stage;
-use App\Models\StageResults;
 use Illuminate\Http\Request;
 
 class OverallResultController extends Controller
@@ -28,13 +27,19 @@ class OverallResultController extends Controller
         $stageCount = Stage::where('rally_id', $rally->id)->count();
         $overallResults = OverallResult::where('rally_id', $rally->id)->get();
 
+        $sortedResults = $overallResults->sort(function ($a, $b) {
+            $timeA = $this->convertTimeToSeconds($a->total_time);
+            $timeB = $this->convertTimeToSeconds($b->total_time);
+            return $timeA <=> $timeB;
+        });
+
         $response = [
             'rally_id' => $rally->id,
             'rally_name' => $rally->rally_name,
             'season_year' => $seasonYear,
             'stage_count' => $stageCount,
-            'overall_results' => $overallResults->map(function ($result) {
-                $crew = Crew::find($result->crew_id);
+            'overall_results' => $sortedResults->map(function ($result) {
+                $crew = Crew::with('team')->find($result->crew_id);
 
                 if (!$crew) {
                     return null;
@@ -42,6 +47,15 @@ class OverallResultController extends Controller
 
                 $driver = Participant::find($crew->driver_id);
                 $coDriver = Participant::find($crew->co_driver_id);
+
+                $totalPenalties = Penalties::where('crew_id', $crew->id)->get();
+
+                $penaltySum = 0;
+                foreach ($totalPenalties as $penalty) {
+                    $penaltySum += $this->convertTimeToSeconds($penalty->penalty_amount);
+                }
+
+                $formattedTotalPenalties = $penaltySum > 0 ? $this->convertSecondsToTime($penaltySum) : '';
 
                 return [
                     'crew_id' => $crew->id,
@@ -61,13 +75,19 @@ class OverallResultController extends Controller
                         'surname' => $coDriver->surname,
                         'nationality' => $coDriver->nationality,
                     ] : null,
+                    'team' => $crew->team ? [
+                        'id' => $crew->team->id,
+                        'name' => $crew->team->team_name,
+                    ] : null,
                     'total_time' => $result->total_time,
+                    'total_penalty_time' => $formattedTotalPenalties,
                 ];
-            })->filter(),
+            })->values(),
         ];
 
         return response()->json($response);
     }
+
 
     public function calculateOverallResults($rallyId)
     {
