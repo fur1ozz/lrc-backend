@@ -174,9 +174,18 @@ class StageResultsController extends Controller
             }
 
             $winnerResult = $topResults->first();
-//            check this
-            $stageWinner = $this->formatStageResult($winnerResult, 1);
-
+            $stageWinner = [
+                'place' => 1,
+                'driver' => $winnerResult->crew->driver->name . ' ' . $winnerResult->crew->driver->surname,
+                'driver_nationality' => $winnerResult->crew->driver->nationality,
+                'co_driver' => $winnerResult->crew->coDriver->name . ' ' . $winnerResult->crew->coDriver->surname,
+                'co_driver_nationality' => $winnerResult->crew->coDriver->nationality,
+                'team' => $winnerResult->crew->team->team_name,
+                'vehicle' => $winnerResult->crew->car,
+                'drive_type' => $winnerResult->crew->drive_type,
+                'completion_time' => $winnerResult->time_taken,
+                'average_speed_kmh' => $winnerResult->avg_speed,
+            ];
 
             foreach ($topResults as $index => $result) {
                 $crewId = $result->crew->id;
@@ -212,45 +221,21 @@ class StageResultsController extends Controller
                 'stage_distance' => $stage->distance,
                 'stage_winner' => $stageWinner
             ];
-        })->filter()->values(); // Filter out null values
+        })->filter()->values();
 
-        // Get the top 3 drivers overall
-        $top3Overall = collect($top3)->sortByDesc(function ($item) {
+        $top3Result = collect($top3)->sortByDesc(function ($item) {
             return $item['total_stage_wins'] * 3 + $item['total_second_places'] * 2 + $item['total_third_places'];
-        })->take(3)->values();
+        })->values();
 
-        // Build the final response structure
         $response = [
-            'rally_results' => [
+            'winner_results' => [
                 'stages' => $stageResults,
-                'top_3_overall' => $top3Overall,
+                'top_3_result' => $top3Result,
             ]
         ];
 
         return response()->json($response);
     }
-
-    private function formatStageResult($stageResult, $place)
-    {
-        $driver = $stageResult->crew->driver;
-        $coDriver = $stageResult->crew->coDriver;
-        $team = $stageResult->crew->team;
-
-        return [
-            'place' => $place,
-            'driver' => $driver->name.' '.$driver->surname,
-            'driver_nationality' => $driver->nationality,
-            'co_driver' => $coDriver ? $coDriver->name.' '.$coDriver->surname : null,
-            'co_driver_nationality' => $coDriver ? $coDriver->nationality : null,
-            'team' => $team ? $team->team_name : null,
-            'vehicle' => $stageResult->crew->car,
-            'drive_type' => $stageResult->crew->drive_type,
-            'crew_number' => $stageResult->crew->crew_number,
-            'completion_time' => $stageResult->time_taken,
-            'average_speed_kmh' => $stageResult->avg_speed,
-        ];
-    }
-
 
     private function convertTimeToSeconds($time)
     {
