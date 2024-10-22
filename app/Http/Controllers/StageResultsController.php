@@ -147,6 +147,110 @@ class StageResultsController extends Controller
             'total_time_with_penalties' => $this->convertSecondsToTime($totalTimeWithPenalties),
         ];
     }
+    public function getStageWinnerResultsByRallyAndSeason($seasonYear, $rallyTag)
+    {
+        $rally = Rally::where('rally_tag', $rallyTag)
+            ->whereHas('season', function ($query) use ($seasonYear) {
+                $query->where('year', $seasonYear);
+            })->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found for this season'], 404);
+        }
+
+        $stages = Stage::where('rally_id', $rally->id)->orderBy('stage_number')->get();
+
+        $top3 = [];
+
+        $stageResults = $stages->map(function ($stage) use (&$top3) {
+            $topResults = StageResults::where('stage_id', $stage->id)
+                ->orderBy('time_taken')
+                ->with(['crew', 'crew.driver', 'crew.coDriver', 'crew.team'])
+                ->limit(3)
+                ->get();
+
+            if ($topResults->isEmpty()) {
+                return null;
+            }
+
+            $winnerResult = $topResults->first();
+//            check this
+            $stageWinner = $this->formatStageResult($winnerResult, 1);
+
+
+            foreach ($topResults as $index => $result) {
+                $crewId = $result->crew->id;
+
+                if (!isset($top3[$crewId])) {
+                    $top3[$crewId] = [
+                        'crew_id' => $crewId,
+                        'driver' => $result->crew->driver->name . ' ' . $result->crew->driver->surname,
+                        'driver_nationality' => $result->crew->driver->nationality,
+                        'co_driver' => $result->crew->coDriver->name . ' ' . $result->crew->coDriver->surname,
+                        'co_driver_nationality' => $result->crew->coDriver->nationality,
+                        'team' => $result->crew->team->team_name,
+                        'vehicle' => $result->crew->car,
+                        'drive_type' => $result->crew->drive_type,
+                        'total_stage_wins' => 0,
+                        'total_second_places' => 0,
+                        'total_third_places' => 0,
+                    ];
+                }
+
+                if ($index == 0) {
+                    $top3[$crewId]['total_stage_wins']++;
+                } elseif ($index == 1) {
+                    $top3[$crewId]['total_second_places']++;
+                } elseif ($index == 2) {
+                    $top3[$crewId]['total_third_places']++;
+                }
+            }
+
+            return [
+                'stage_number' => $stage->stage_number,
+                'stage_name' => $stage->stage_name,
+                'stage_distance' => $stage->distance,
+                'stage_winner' => $stageWinner
+            ];
+        })->filter()->values(); // Filter out null values
+
+        // Get the top 3 drivers overall
+        $top3Overall = collect($top3)->sortByDesc(function ($item) {
+            return $item['total_stage_wins'] * 3 + $item['total_second_places'] * 2 + $item['total_third_places'];
+        })->take(3)->values();
+
+        // Build the final response structure
+        $response = [
+            'rally_results' => [
+                'stages' => $stageResults,
+                'top_3_overall' => $top3Overall,
+            ]
+        ];
+
+        return response()->json($response);
+    }
+
+    private function formatStageResult($stageResult, $place)
+    {
+        $driver = $stageResult->crew->driver;
+        $coDriver = $stageResult->crew->coDriver;
+        $team = $stageResult->crew->team;
+
+        return [
+            'place' => $place,
+            'driver' => $driver->name.' '.$driver->surname,
+            'driver_nationality' => $driver->nationality,
+            'co_driver' => $coDriver ? $coDriver->name.' '.$coDriver->surname : null,
+            'co_driver_nationality' => $coDriver ? $coDriver->nationality : null,
+            'team' => $team ? $team->team_name : null,
+            'vehicle' => $stageResult->crew->car,
+            'drive_type' => $stageResult->crew->drive_type,
+            'crew_number' => $stageResult->crew->crew_number,
+            'completion_time' => $stageResult->time_taken,
+            'average_speed_kmh' => $stageResult->avg_speed,
+        ];
+    }
+
 
     private function convertTimeToSeconds($time)
     {
