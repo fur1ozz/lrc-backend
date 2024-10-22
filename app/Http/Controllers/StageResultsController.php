@@ -176,6 +176,7 @@ class StageResultsController extends Controller
             $winnerResult = $topResults->first();
             $stageWinner = [
                 'place' => 1,
+                'crew_number' => $winnerResult->crew->crew_number,
                 'driver' => $winnerResult->crew->driver->name . ' ' . $winnerResult->crew->driver->surname,
                 'driver_nationality' => $winnerResult->crew->driver->nationality,
                 'co_driver' => $winnerResult->crew->coDriver->name . ' ' . $winnerResult->crew->coDriver->surname,
@@ -193,6 +194,7 @@ class StageResultsController extends Controller
                 if (!isset($top3[$crewId])) {
                     $top3[$crewId] = [
                         'crew_id' => $crewId,
+                        'crew_number' => $result->crew->crew_number,
                         'driver' => $result->crew->driver->name . ' ' . $result->crew->driver->surname,
                         'driver_nationality' => $result->crew->driver->nationality,
                         'co_driver' => $result->crew->coDriver->name . ' ' . $result->crew->coDriver->surname,
@@ -218,7 +220,7 @@ class StageResultsController extends Controller
             return [
                 'stage_number' => $stage->stage_number,
                 'stage_name' => $stage->stage_name,
-                'stage_distance' => $stage->distance,
+                'stage_distance' => $stage->distance_km,
                 'stage_winner' => $stageWinner
             ];
         })->filter()->values();
