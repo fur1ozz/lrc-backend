@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Rally;
 use App\Models\Season;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class RallyController extends Controller
 {
@@ -25,6 +26,32 @@ class RallyController extends Controller
         });
 
         return response()->json($rallies);
+    }
+    public function getNextEvent()
+    {
+        $today = Carbon::today();
+
+        $nextRally = Rally::where('date_to', '>=', $today)
+            ->orderBy('date_from')
+            ->first();
+
+        if (!$nextRally) {
+            return response()->json(['message' => 'No upcoming rally found'], 404);
+        }
+
+        $season = Season::find($nextRally->season_id);
+
+        return response()->json([
+            'id' => $nextRally->id,
+            'name' => $nextRally->rally_name,
+            'tag' => $nextRally->rally_tag,
+            'date_from' => Carbon::parse($nextRally->date_from)->format('d.m.'),
+            'date_to' => Carbon::parse($nextRally->date_to)->format('d.m.'),
+            'location' => $nextRally->location,
+            'year' => $season ? $season->year : null,
+            'road_surface' => $nextRally->road_surface,
+            'sequence' => $nextRally->rally_sequence,
+        ]);
     }
 
     public function store(Request $request)
