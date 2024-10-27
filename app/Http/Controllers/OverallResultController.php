@@ -8,6 +8,7 @@ use App\Models\Participant;
 use App\Models\Penalties;
 use App\Models\Rally;
 use App\Models\Stage;
+use App\Models\StageResults;
 use Illuminate\Http\Request;
 
 class OverallResultController extends Controller
@@ -91,7 +92,19 @@ class OverallResultController extends Controller
 
     public function calculateOverallResults($rallyId)
     {
+        $rally = Rally::where('id', $rallyId)->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found'], 404);
+        }
+
         $stages = Stage::where('rally_id', $rallyId)->orderBy('stage_number')->get();
+
+        $hasStageResults = StageResults::whereIn('stage_id', $stages->pluck('id'))->exists();
+
+        if (!$hasStageResults) {
+            return response()->json(['message' => 'No stage results available to calculate overall results'], 404);
+        }
 
         $crews = Crew::whereHas('stageResults', function ($query) use ($rallyId) {
             $query->whereHas('stage', function ($stageQuery) use ($rallyId) {
