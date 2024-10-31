@@ -36,7 +36,14 @@ class RallyController extends Controller
             ->first();
 
         if (!$nextRally) {
-            return response()->json(['message' => 'No upcoming rally found'], 404);
+            $nextRally = Rally::orderBy('date_to', 'desc')->first();
+            $allEventsFinished = true;
+        } else {
+            $allEventsFinished = false;
+        }
+
+        if (!$nextRally) {
+            return response()->json(['message' => 'No rally events found'], 404);
         }
 
         $season = Season::find($nextRally->season_id);
@@ -45,14 +52,16 @@ class RallyController extends Controller
             'id' => $nextRally->id,
             'name' => $nextRally->rally_name,
             'tag' => $nextRally->rally_tag,
-            'date_from' => Carbon::parse($nextRally->date_from)->format('d.m.'),
-            'date_to' => Carbon::parse($nextRally->date_to)->format('d.m.'),
+            'date_from' => Carbon::parse($nextRally->date_from)->format('d.m'),
+            'date_to' => Carbon::parse($nextRally->date_to)->format('d.m'),
             'location' => $nextRally->location,
             'year' => $season ? $season->year : null,
             'road_surface' => $nextRally->road_surface,
             'sequence' => $nextRally->rally_sequence,
+            'all_events_finished' => $allEventsFinished,
         ]);
     }
+
 
     public function store(Request $request)
     {
