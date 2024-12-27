@@ -45,6 +45,8 @@ class StageResultsController extends Controller
         $response = [
             'stage_id' => $stage->id,
             'stage_name' => $stage->stage_name,
+            'stage_distance' => $stage->distance_km,
+            'stage_start_time' => $stage->start_time,
             'stage_number' => $stage->stage_number,
             'stage_count' => $stageCount,
             'results' => $sortedResults->map(function ($result) use ($stage, $stageNumber, $rally) {
