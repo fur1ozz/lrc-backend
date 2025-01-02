@@ -4,16 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Crew;
 use App\Models\Participant;
+use App\Models\Rally;
 use App\Models\Split;
 use App\Models\SplitTime;
+use App\Models\Stage;
 use App\Models\StageResults;
 use Illuminate\Http\Request;
 
 class SplitTimeController extends Controller
 {
-    public function getCrewSplitTimesByStageId($stageId)
+    public function getCrewSplitTimesByStageId($seasonYear, $rallyTag, $stageNumber)
     {
-        $splits = Split::where('stage_id', $stageId)
+
+        $rally = Rally::where('rally_tag', $rallyTag)
+            ->whereHas('season', function ($query) use ($seasonYear) {
+                $query->where('year', $seasonYear);
+            })->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found for this season'], 404);
+        }
+
+        $stage = Stage::where('rally_id', $rally->id)
+            ->where('stage_number', $stageNumber)
+            ->first();
+
+        if (!$stage) {
+            return response()->json(['message' => 'No such stage exists'], 404);
+        }
+
+        $splits = Split::where('stage_id', $stage->id)
             ->select('id', 'split_number', 'split_distance')
             ->orderBy('split_number', 'asc')
             ->get();
@@ -21,7 +41,7 @@ class SplitTimeController extends Controller
         if ($splits->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No splits found for this stage.',
+                'message' => 'No splits found for this stage. id-' . $stage->id,
             ], 404);
         }
 
@@ -35,7 +55,7 @@ class SplitTimeController extends Controller
             ], 404);
         }
 
-        $stageResults = StageResults::where('stage_id', $stageId)->get();
+        $stageResults = StageResults::where('stage_id', $stage->id)->get();
 
         $response = [];
 

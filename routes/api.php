@@ -37,7 +37,7 @@ Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDo
 //rally results
 Route::get('overall-results/{seasonYear}/{rallyName}/', [OverallResultController::class, 'getOverallResultsByRallyAndSeason']);
 Route::get('stage-results/{seasonYear}/{rallyName}/{stageNumber}', [StageResultsController::class, 'getStageResultsByRallyAndSeason']);
-Route::get('stage-splits/{stageId}', [SplitController::class, 'getSplitsByStageId']);
+Route::get('stage-splits/{seasonYear}/{rallyName}/{stageNumber}', [SplitTimeController::class, 'getCrewSplitTimesByStageId']);
 Route::get('stage-splits/{stageId}/crew-split-times', [SplitTimeController::class, 'getCrewSplitTimesByStageId']);
 Route::get('rally-penalties/{seasonYear}/{rallyName}/', [PenaltiesController::class, 'getPenaltiesByRally']);
 Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController::class, 'getRetirementsByRally']);

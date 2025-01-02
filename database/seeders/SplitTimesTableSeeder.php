@@ -12,6 +12,8 @@ class SplitTimesTableSeeder extends Seeder
 {
     public function run()
     {
+        SplitTime::truncate();
+
         $crews = Crew::where('rally_id', 4)->get();
 
         $splits = Split::all();
@@ -35,7 +37,7 @@ class SplitTimesTableSeeder extends Seeder
                 $minutes = floor($totalSeconds / 60);
                 $seconds = $totalSeconds % 60;
 
-                $splitTime = sprintf('%02d:%02d.%02d', $minutes, $seconds, $milliseconds);
+                $splitTime = sprintf('%d:%02d.%02d', $minutes, $seconds, $milliseconds);
 
 
                 SplitTime::create([
