@@ -12,11 +12,13 @@ return new class extends Migration
     public function up()
     {
         Schema::create('splits', function (Blueprint $table) {
-            $table->id('split_id');
+            $table->id();
             $table->unsignedBigInteger('stage_id');
             $table->integer('split_number');
             $table->float('split_distance');
             $table->timestamps();
+
+            $table->foreign('stage_id')->references('id')->on('stages')->onDelete('cascade');
         });
     }
 
