@@ -2,14 +2,142 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Crew;
+use App\Models\Participant;
+use App\Models\Split;
 use App\Models\SplitTime;
+use App\Models\StageResults;
 use Illuminate\Http\Request;
 
 class SplitTimeController extends Controller
 {
+    public function getCrewSplitTimesByStageId($stageId)
+    {
+        $splits = Split::where('stage_id', $stageId)
+            ->select('id', 'split_number', 'split_distance')
+            ->orderBy('split_number', 'asc')
+            ->get();
+
+        if ($splits->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No splits found for this stage.',
+            ], 404);
+        }
+
+        $splitIds = $splits->pluck('id');
+        $splitTimes = SplitTime::whereIn('split_id', $splitIds)->get();
+
+        if ($splitTimes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No split times found for this stage.',
+            ], 404);
+        }
+
+        $stageResults = StageResults::where('stage_id', $stageId)->get();
+
+        $response = [];
+
+        foreach ($splitTimes as $splitTime) {
+            if (!isset($response[$splitTime->crew_id])) {
+                $stageResult = $stageResults->firstWhere('crew_id', $splitTime->crew_id);
+
+                $crew = Crew::with('team')->find($splitTime->crew_id);
+
+                if (!$crew) {
+                    return null;
+                }
+
+                $driver = Participant::find($crew->driver_id);
+                $coDriver = Participant::find($crew->co_driver_id);
+
+                $response[$splitTime->crew_id] = [
+                    'crew_id' => $crew->id,
+                    'crew_number' => $crew->crew_number,
+                    'car' => $crew->car,
+                    'drive_type' => $crew->drive_type,
+                    'drive_class' => $crew->drive_class,
+                    'driver' => [
+                        'id' => $driver->id,
+                        'name' => $driver->name,
+                        'surname' => $driver->surname,
+                        'nationality' => $driver->nationality,
+                    ],
+                    'co_driver' => $coDriver ? [
+                        'id' => $coDriver->id,
+                        'name' => $coDriver->name,
+                        'surname' => $coDriver->surname,
+                        'nationality' => $coDriver->nationality,
+                    ] : null,
+                    'team' => $crew->team ? [
+                        'id' => $crew->team->id,
+                        'name' => $crew->team->team_name,
+                    ] : null,
+                    'stage_time' => $stageResult ? $stageResult->time_taken : null,
+                    'splits' => []
+                ];
+            }
+
+            $response[$splitTime->crew_id]['splits'][] = [
+                'split_number' => $splitTime->split->split_number ?? null,
+                'split_distance' => $splitTime->split->split_distance ?? null,
+                'split_time' => $splitTime->split_time,
+            ];
+        }
+
+        $responseData = [
+            'splits' => $splits,
+            'crew_times' => array_values($response),
+        ];
+
+        usort($responseData['crew_times'], function ($a, $b) {
+            $aTime = $this->convertTimeToSeconds($a['stage_time']);
+            $bTime = $this->convertTimeToSeconds($b['stage_time']);
+            return $aTime - $bTime;
+        });
+
+        return response()->json([
+            'success' => true,
+            'splits' => $responseData['splits'],
+            'crew_times' => $responseData['crew_times'],
+        ]);
+    }
+
     /**
-     * Display a listing of the resource.
+     * Helper function to convert time string (mm:ss.milliseconds) to total seconds.
+     *
+     * @param string $time
+     * @return float
      */
+    private function convertTimeToSeconds($time)
+    {
+        if (!$time) {
+            return PHP_INT_MAX; // If no stage time exists, push it to the end
+        }
+
+        // Split the time string into minutes and seconds.milliseconds
+        $timeParts = explode(':', $time);
+        $minutes = 0;
+        $seconds = 0;
+        $milliseconds = 0;
+
+        if (count($timeParts) == 2) {
+            // The format is mm:ss.milliseconds
+            $minuteSecondParts = explode('.', $timeParts[1]);
+
+            $minutes = (int)$timeParts[0];
+            $seconds = (int)$minuteSecondParts[0];
+            $milliseconds = (int)(isset($minuteSecondParts[1]) ? $minuteSecondParts[1] : 0);
+
+            // Return total time in seconds, including the milliseconds as a fraction
+            return $minutes * 60 + $seconds + ($milliseconds / 1000);
+        }
+
+        return 0; // Default return if the time format is incorrect
+    }
+
+
     public function index()
     {
         $splitTimes = SplitTime::with(['crew', 'split'])->get();

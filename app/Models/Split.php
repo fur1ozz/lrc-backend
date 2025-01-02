@@ -16,4 +16,9 @@ class Split extends Model
         'split_number',
         'split_distance',
     ];
+    public function stage()
+    {
+        return $this->belongsTo(Stage::class);
+    }
+
 }

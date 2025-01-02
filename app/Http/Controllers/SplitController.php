@@ -7,6 +7,27 @@ use Illuminate\Http\Request;
 
 class SplitController extends Controller
 {
+    public function getSplitsByStageId($stageId)
+    {
+
+        $splits = Split::where('stage_id', $stageId)
+            ->select('split_number', 'split_distance')
+            ->orderBy('split_number', 'asc')
+            ->get();
+
+        if ($splits->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No splits found for this stage.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $splits,
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      */
