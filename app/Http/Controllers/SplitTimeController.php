@@ -137,8 +137,12 @@ class SplitTimeController extends Controller
             $stageTime = $data['stage_time'];
             if ($stageTime) {
                 $fastestStageTime = $fastestStageResult->time_taken;
-                $stageDifference = $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
-                $response[$crewId]['stage_time_dif'] = $stageDifference;
+                if ($crewId == $fastestCrew->id) {
+                    $response[$crewId]['stage_time_dif'] = null;
+                } else {
+                    $stageDifference = $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
+                    $response[$crewId]['stage_time_dif'] = $stageDifference;
+                }
             }
         }
 
@@ -148,8 +152,8 @@ class SplitTimeController extends Controller
         ];
 
         usort($responseData['crew_times'], function ($a, $b) {
-            if ($a['stage_time'] === null) return 1; // Move $a to the end
-            if ($b['stage_time'] === null) return -1; // Move $b to the end
+            if ($a['stage_time'] === null) return 1;
+            if ($b['stage_time'] === null) return -1;
 
             $aTime = $this->convertStageTimeToSeconds($a['stage_time']);
             $bTime = $this->convertStageTimeToSeconds($b['stage_time']);
@@ -297,8 +301,7 @@ class SplitTimeController extends Controller
 
     public function index()
     {
-        $splitTimes = SplitTime::with(['crew', 'split'])->get();
-        return response()->json($splitTimes);
+        //
     }
 
     /**
