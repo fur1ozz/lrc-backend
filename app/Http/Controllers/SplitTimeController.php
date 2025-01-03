@@ -55,19 +55,31 @@ class SplitTimeController extends Controller
             ], 404);
         }
 
-        $stageResults = StageResults::where('stage_id', $stage->id)->get();
+        // Get the fastest crew based on stage time
+        $fastestStageResult = StageResults::where('stage_id', $stage->id)
+            ->orderByRaw("CAST(REPLACE(time_taken, ':', '') AS UNSIGNED) ASC")
+            ->first();
 
+        if (!$fastestStageResult) {
+            return response()->json(['message' => 'No stage results found'], 404);
+        }
+
+        $fastestCrew = Crew::find($fastestStageResult->crew_id);
+        $fastestCrewSplitTimes = SplitTime::where('crew_id', $fastestCrew->id)
+            ->whereIn('split_id', $splitIds)
+            ->get();
+
+        if ($fastestCrewSplitTimes->isEmpty()) {
+            return response()->json(['message' => 'No split times for the fastest crew'], 404);
+        }
         $response = [];
 
         foreach ($splitTimes as $splitTime) {
             if (!isset($response[$splitTime->crew_id])) {
-                $stageResult = $stageResults->firstWhere('crew_id', $splitTime->crew_id);
-
                 $crew = Crew::with('team')->find($splitTime->crew_id);
-
-                if (!$crew) {
-                    return null;
-                }
+                $stageResult = StageResults::where('crew_id', $splitTime->crew_id)
+                    ->where('stage_id', $stage->id)
+                    ->first();
 
                 $driver = Participant::find($crew->driver_id);
                 $coDriver = Participant::find($crew->co_driver_id);
@@ -99,10 +111,24 @@ class SplitTimeController extends Controller
                 ];
             }
 
+            $fastestSplitTime = $fastestCrewSplitTimes->firstWhere('split_id', $splitTime->split_id);
+
+            if ($fastestSplitTime) {
+                if ($splitTime->crew_id === $fastestCrew->id) {
+                    $splitDifference = null;
+                } else {
+                    $splitDifference = $this->calculateSplitDifference($splitTime->split_time, $fastestSplitTime->split_time);
+                }
+            } else {
+                $splitDifference = null;
+            }
+
+            // Add the split data along with the calculated difference to the response
             $response[$splitTime->crew_id]['splits'][] = [
                 'split_number' => $splitTime->split->split_number ?? null,
                 'split_distance' => $splitTime->split->split_distance ?? null,
                 'split_time' => $splitTime->split_time,
+                'split_dif' => $splitDifference,
             ];
         }
 
@@ -125,6 +151,44 @@ class SplitTimeController extends Controller
     }
 
     /**
+     * Helper function to calculate the difference between two times in mm:ss.xx format.
+     *
+     * @param string $crewTime
+     * @param string $fastestTime
+     * @return string
+     */
+    private function calculateSplitDifference($crewTime, $fastestTime)
+    {
+        // Convert both times to seconds for easier comparison
+        $crewTimeSeconds = $this->convertTimeToSeconds($crewTime);
+        $fastestTimeSeconds = $this->convertTimeToSeconds($fastestTime);
+
+        // Calculate the difference in seconds
+        $differenceInSeconds = $crewTimeSeconds - $fastestTimeSeconds;
+
+        // If the difference is greater than or equal to 60 seconds, display in +m:ss.x format
+        if (abs($differenceInSeconds) >= 60) {
+            $minutes = floor(abs($differenceInSeconds) / 60);
+            $seconds = abs($differenceInSeconds) % 60;
+            $milliseconds = round(($differenceInSeconds - floor($differenceInSeconds)) * 10);  // Get the 1-digit milliseconds part
+
+            // Format the difference as +m:ss.x or -m:ss.x
+            $formattedDifference = sprintf("%+d:%02d.%d", $minutes, floor($seconds), $milliseconds);
+        } else {
+            // Otherwise, return the difference in +ss.x format (for differences less than 1 minute)
+            $formattedDifference = number_format($differenceInSeconds, 1);
+
+            // Ensure the difference has a "+" sign for positive numbers
+            if ($differenceInSeconds > 0) {
+                $formattedDifference = "+" . $formattedDifference;
+            }
+        }
+
+        return $formattedDifference;
+    }
+
+
+    /**
      * Helper function to convert time string (mm:ss.milliseconds) to total seconds.
      *
      * @param string $time
@@ -143,15 +207,17 @@ class SplitTimeController extends Controller
         $milliseconds = 0;
 
         if (count($timeParts) == 2) {
-            // The format is mm:ss.milliseconds
+            // The format is mm:ss.x
             $minuteSecondParts = explode('.', $timeParts[1]);
 
             $minutes = (int)$timeParts[0];
             $seconds = (int)$minuteSecondParts[0];
-            $milliseconds = (int)(isset($minuteSecondParts[1]) ? $minuteSecondParts[1] : 0);
+
+            // Handle the milliseconds properly as a single digit
+            $milliseconds = (isset($minuteSecondParts[1]) ? (int)$minuteSecondParts[1] : 0);
 
             // Return total time in seconds, including the milliseconds as a fraction
-            return $minutes * 60 + $seconds + ($milliseconds / 1000);
+            return $minutes * 60 + $seconds + ($milliseconds / 10); // Divide by 10 to get 0-1 decimal
         }
 
         return 0; // Default return if the time format is incorrect

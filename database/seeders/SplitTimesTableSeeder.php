@@ -32,12 +32,12 @@ class SplitTimesTableSeeder extends Seeder
                 // Final time in seconds
                 $totalSeconds = $baseTime + $increment + $randomOffset;
 
-                $milliseconds = round(rand(0, 999) / 10);
+                $milliseconds = round(rand(0, 999) / 100);
 
                 $minutes = floor($totalSeconds / 60);
                 $seconds = $totalSeconds % 60;
 
-                $splitTime = sprintf('%d:%02d.%02d', $minutes, $seconds, $milliseconds);
+                $splitTime = sprintf('%d:%02d.%d', $minutes, $seconds, $milliseconds);
 
 
                 SplitTime::create([
