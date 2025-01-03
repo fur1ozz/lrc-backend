@@ -16,7 +16,6 @@ class SplitTimeController extends Controller
 {
     public function getCrewSplitTimesByStageId($seasonYear, $rallyTag, $stageNumber)
     {
-
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
                 $query->where('year', $seasonYear);
@@ -31,7 +30,12 @@ class SplitTimeController extends Controller
             ->first();
 
         if (!$stage) {
-            return response()->json(['message' => 'No such stage exists'], 404);
+            return response()->json([
+                'type' => "stage",
+                'message' => 'No such stage exists',
+                'splits' => [],
+                'crew_times' => [],
+            ]);
         }
 
         $splits = Split::where('stage_id', $stage->id)
@@ -39,21 +43,14 @@ class SplitTimeController extends Controller
             ->orderBy('split_number', 'asc')
             ->get();
 
-        if ($splits->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No splits found for this stage. id-' . $stage->id,
-            ], 404);
-        }
-
         $splitIds = $splits->pluck('id');
         $splitTimes = SplitTime::whereIn('split_id', $splitIds)->get();
 
-        if ($splitTimes->isEmpty()) {
+        if ($splits->isEmpty() || $splitTimes->isEmpty()) {
             return response()->json([
-                'success' => false,
-                'message' => 'No split times found for this stage.',
-            ], 404);
+                'splits' => $splits->isEmpty() ? [] : $splits,
+                'crew_times' => [],
+            ]);
         }
 
         // Get the fastest crew based on stage time
@@ -61,18 +58,13 @@ class SplitTimeController extends Controller
             ->orderByRaw("CAST(REPLACE(time_taken, ':', '') AS UNSIGNED) ASC")
             ->first();
 
-        if (!$fastestStageResult) {
-            return response()->json(['message' => 'No stage results found'], 404);
-        }
+        $fastestCrew = $fastestStageResult ? Crew::find($fastestStageResult->crew_id) : null;
+        $fastestCrewSplitTimes = $fastestCrew
+            ? SplitTime::where('crew_id', $fastestCrew->id)
+                ->whereIn('split_id', $splitIds)
+                ->get()
+            : collect();
 
-        $fastestCrew = Crew::find($fastestStageResult->crew_id);
-        $fastestCrewSplitTimes = SplitTime::where('crew_id', $fastestCrew->id)
-            ->whereIn('split_id', $splitIds)
-            ->get();
-
-        if ($fastestCrewSplitTimes->isEmpty()) {
-            return response()->json(['message' => 'No split times for the fastest crew'], 404);
-        }
         $response = [];
 
         foreach ($splitTimes as $splitTime) {
@@ -108,23 +100,16 @@ class SplitTimeController extends Controller
                         'name' => $crew->team->team_name,
                     ] : null,
                     'stage_time' => $stageResult ? $stageResult->time_taken : null,
-                    'splits' => []
+                    'splits' => [],
                 ];
             }
 
             $fastestSplitTime = $fastestCrewSplitTimes->firstWhere('split_id', $splitTime->split_id);
 
-            if ($fastestSplitTime) {
-                if ($splitTime->crew_id === $fastestCrew->id) {
-                    $splitDifference = null;
-                } else {
-                    $splitDifference = $this->calculateSplitDifference($splitTime->split_time, $fastestSplitTime->split_time);
-                }
-            } else {
-                $splitDifference = null;
-            }
+            $splitDifference = $fastestSplitTime
+                ? ($splitTime->crew_id === $fastestCrew->id ? null : $this->calculateSplitDifference($splitTime->split_time, $fastestSplitTime->split_time))
+                : null;
 
-            // Add the split data along with the calculated difference to the response
             $response[$splitTime->crew_id]['splits'][] = [
                 'split_number' => $splitTime->split->split_number ?? null,
                 'split_distance' => $splitTime->split->split_distance ?? null,
@@ -137,12 +122,9 @@ class SplitTimeController extends Controller
             $stageTime = $data['stage_time'];
             if ($stageTime) {
                 $fastestStageTime = $fastestStageResult->time_taken;
-                if ($crewId == $fastestCrew->id) {
-                    $response[$crewId]['stage_time_dif'] = null;
-                } else {
-                    $stageDifference = $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
-                    $response[$crewId]['stage_time_dif'] = $stageDifference;
-                }
+                $response[$crewId]['stage_time_dif'] = $crewId == $fastestCrew->id
+                    ? null
+                    : $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
             }
         }
 
@@ -161,7 +143,6 @@ class SplitTimeController extends Controller
         });
 
         return response()->json([
-            'success' => true,
             'splits' => $responseData['splits'],
             'crew_times' => $responseData['crew_times'],
         ]);
