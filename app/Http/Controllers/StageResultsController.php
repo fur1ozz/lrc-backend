@@ -14,6 +14,7 @@ use App\Models\Penalties;
 
 class StageResultsController extends Controller
 {
+//    TODO FIX the issue with time convertion (if the stage time miliseconds is odd, then when calculating the overalltime with penalties, it somehow changes the milisecond to even)
     public function getStageResultsByRallyAndSeason($seasonYear, $rallyTag, $stageNumber)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
