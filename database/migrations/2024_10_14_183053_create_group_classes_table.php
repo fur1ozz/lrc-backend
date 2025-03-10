@@ -11,8 +11,10 @@ return new class extends Migration
         Schema::create('group_classes', function (Blueprint $table) {
             $table->id();
             $table->string('class_name');
-            $table->string('season');
+            $table->unsignedBigInteger('group_id');
             $table->timestamps();
+
+            $table->foreign('group_id')->references('id')->on('groups')->onDelete('cascade');
         });
     }
 
