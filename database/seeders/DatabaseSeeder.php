@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
 //            'email' => 'test@example.com',
 //        ]);
         $this->call([
+            SeasonSeeder::class,
             RallySeeder::class,
             NewsTableSeeder::class,
             StageSeeder::class,
