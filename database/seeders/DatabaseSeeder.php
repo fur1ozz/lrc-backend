@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -23,12 +21,13 @@ class DatabaseSeeder extends Seeder
 
             RallySeeder::class,
             RallyGroupClassSeeder::class,
-            NewsTableSeeder::class,
             StageSeeder::class,
+
+            CrewParticipantTeamSeeder::class,
+            NewsTableSeeder::class,
             FoldersAndDocumentsSeeder::class,
-            TeamSeeder::class,
-            ParticipantSeeder::class,
-            CrewSeeder::class,
+
+            // other
             PrevWinnerSeeder::class,
         ]);
     }
