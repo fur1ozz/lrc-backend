@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Models\Folder;
 use App\Models\Document;
 use App\Models\Rally;
-use Illuminate\Support\Facades\DB;
 
 class FoldersAndDocumentsSeeder extends Seeder
 {

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Rally;
 use Illuminate\Database\Seeder;
 use App\Models\PrevWinner;
 
@@ -10,19 +10,33 @@ class PrevWinnerSeeder extends Seeder
 {
     public function run()
     {
-        PrevWinner::create([
-            'rally_id' => 1,
-            'crew_id' => 1,
-            'feedback' => 'Great performance!',
-            'winning_img' => 'https://example.com/winning-image1.jpg'
-        ]);
+        // TODO ADMIN PANEL create usable dummy winner images and seed them
+        $rallies = Rally::where('season_id', 1)->get();
 
-        PrevWinner::create([
-            'rally_id' => 2,
-            'crew_id' => 2,
-            'feedback' => 'Amazing drive!',
-            'winning_img' => 'https://example.com/winning-image2.jpg'
-        ]);
+        foreach ($rallies as $rally) {
+            PrevWinner::create([
+                'rally_id' => $rally->id,
+                'crew_id' => rand(1, 50),
+                'feedback' => $this->generateRandomFeedback(),
+                'winning_img' => 'https://example.com/winning-image' . rand(1, 10) . '.jpg',
+            ]);
+        }
+    }
 
+    private function generateRandomFeedback()
+    {
+        $feedbacks = [
+            'Great performance!',
+            'Amazing drive!',
+            'Outstanding effort!',
+            'Incredible skill!',
+            'Fantastic rally!',
+            'Impressive speed!',
+            'Perfect execution!',
+            'Strong finish!',
+            'An unforgettable race!',
+        ];
+
+        return $feedbacks[array_rand($feedbacks)];
     }
 }
