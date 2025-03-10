@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             GroupsClassesSeeder::class,
 
             RallySeeder::class,
+            RallyGroupClassSeeder::class,
             NewsTableSeeder::class,
             StageSeeder::class,
             FoldersAndDocumentsSeeder::class,
