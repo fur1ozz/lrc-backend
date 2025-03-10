@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             StageSeeder::class,
 
             CrewParticipantTeamSeeder::class,
+            CrewParticipantTeamHistoricSeeder::class,
             NewsTableSeeder::class,
             FoldersAndDocumentsSeeder::class,
 

@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Faker\Factory as Faker;
 
-class CrewParticipantTeamSeeder extends Seeder
+class CrewParticipantTeamHistoricSeeder extends Seeder
 {
     public function run()
     {
@@ -26,43 +26,35 @@ class CrewParticipantTeamSeeder extends Seeder
             'be', // Belgium
         ];
 
-        $cars = [
+        $historic_cars = [
             'AWD' => [
-                'Subaru Impreza', 'Ford Fiesta R5', 'Citroen C3 WRC', 'Toyota Yaris WRC',
-                'Mitsubishi Lancer Evo X', 'Hyundai i20 WRC', 'Skoda Fabia R5', 'Volkswagen Polo GTI R5',
-                'Audi Quattro S1', 'Toyota Celica GT-Four ST205', 'Lancia Delta Integrale',
-                'Peugeot 205 T16', 'MG Metro 6R4', 'Mini Cooper JCW WRC', 'Mitsubishi Mirage R5', 'Subaru Legacy RS'
-            ],
-            'FWD' => [
-                'Peugeot 208 Rally4', 'Opel Corsa Rally4', 'Renault Clio Rally5', 'Honda Civic Type R Rally',
-                'Suzuki Swift Sport Rally', 'Dacia Sandero Rally Cup', 'Volkswagen Golf Kit Car',
-                'Peugeot 106 Maxi', 'Citroën Saxo Kit Car', 'Suzuki Ignis S1600', 'Daihatsu Charade GTti Rally',
-                'Fiat Punto S1600'
+                'Audi Quattro S1', 'Peugeot 205 T16', 'Lancia Delta S4', 'Ford RS200',
+                'MG Metro 6R4',
             ],
             'RWD' => [
-                'Ford Escort MK2', 'Lada 2105', 'Porsche 911 GT3 Rally', 'Fiat Abarth 124 Rally',
-                'BMW M3 E30 Rally', 'Mazda RX-7 Group B', 'Opel Manta 400', 'Fiat 131 Abarth',
-                'Toyota Starlet KP61', 'Nissan 240RS', 'Datsun 160J', 'Škoda 130 RS',
-                'Ford Sierra RS Cosworth', 'Renault 5 Turbo', 'Alpine A110 Rally', 'Lancia Stratos HF',
-                'Volvo 242 Turbo Rally', 'Chevrolet Corvette Rally', 'Ferrari 308 GTB Rally', 'Lotus Sunbeam Talbot'
+                'Lancia Stratos HF', 'Porsche 911 Carrera RS', 'Ford Escort RS1800', 'Fiat 131 Abarth',
+                'Opel Ascona 400', 'Alpine A110', 'Renault 17 Gordini', 'Datsun 240Z',
+                'Volvo 142 Rally', 'Saab 96 V4',
+            ],
+            'FWD' => [
+                'Citroën Saxo Kit Car', 'Suzuki Ignis S1600', 'Daihatsu Charade GTti Rally', 'Fiat Punto S1600',
             ],
         ];
 
+
         // Mapping class IDs to drive types
         $driveTypeMapping = [
-            'AWD' => [1, 2, 3, 5, 9, 10, 11, 13, 20],
-            'FWD' => [4, 7, 8, 12, 15, 19],
-            'RWD' => [6, 14],
-            '2WD' => [21, 24]
+            'AWD' => [23],
+            '2WD' => [24]
         ];
 
         $rallies = DB::table('rallies')->pluck('id');
 
         foreach ($rallies as $rallyId) {
-            // Get all classes accepted by this rally, excluding class_id 23, 24, and 25 (Default Historic classes)
+            // Get only historic classes that are allowed by the rally
             $classes = DB::table('rally_classes')
                 ->where('rally_id', $rallyId)
-                ->whereNotIn('class_id', [23, 24, 25])
+                ->whereIn('class_id', [23, 24, 25])
                 ->pluck('class_id');
 
             $crewNumber = 1;
@@ -108,13 +100,13 @@ class CrewParticipantTeamSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
 
-                    // Pick a random car based on the drive type
+                    // Pick a random historic car based on the drive type
                     if ($driveType === '2WD') {
                         $randomDriveType = $faker->randomElement(['FWD', 'RWD']);
-                        $car = $faker->randomElement($cars[$randomDriveType]);
+                        $car = $faker->randomElement($historic_cars[$randomDriveType]);
                         $finalDriveType = $randomDriveType;
                     } else {
-                        $car = $faker->randomElement($cars[$driveType]);
+                        $car = $faker->randomElement($historic_cars[$driveType]);
                         $finalDriveType = $driveType;
                     }
 
@@ -131,7 +123,7 @@ class CrewParticipantTeamSeeder extends Seeder
                         'co_driver_id' => $coDriverId,
                         'team_id' => $teamId,
                         'rally_id' => $rallyId,
-                        'crew_number' => $crewNumber,
+                        'crew_number' => 'H'.$crewNumber,
                         'car' => $car,
                         'drive_type' => $finalDriveType,
                         'drive_class' => $className,
