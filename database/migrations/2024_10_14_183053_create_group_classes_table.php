@@ -20,6 +20,9 @@ return new class extends Migration
 
     public function down()
     {
+        Schema::table('crew_class_involvements', function (Blueprint $table) {
+            $table->dropForeign('class_id');
+        });
         Schema::dropIfExists('group_classes');
     }
 };
