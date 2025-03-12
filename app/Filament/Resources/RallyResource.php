@@ -9,6 +9,7 @@ use App\Models\Season;
 use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
@@ -34,27 +35,30 @@ class RallyResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('rally_name')
-                    ->label('Rally Name')
-                    ->columnSpan(fn ($get) => empty($get('id')) ? 1 : 2)
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(function ($state, $set, $get) {
-                        if (empty($get('id'))) {
-                            $state = str_ireplace('Rallysprint', 'rally-sprint', $state);
-                            $state = ucwords(strtolower($state));
+                Grid::make(['default' => 1, 'lg' => 2])
+                    ->schema([
+                        TextInput::make('rally_name')
+                            ->label('Rally Name')
+                            ->columnSpan(fn ($get) => empty($get('id')) ? 1 : 2)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                if (empty($get('id'))) {
+                                    $state = str_ireplace('Rallysprint', 'rally-sprint', $state);
+                                    $state = ucwords(strtolower($state));
 
-                            $slug = Str::slug($state);
-                            $set('rally_tag', $slug);
-                        }
-                    })
-                    ->helperText('Only "Rallysprint" or "Rally" are allowed.')
-                    ->required(),
+                                    $slug = Str::slug($state);
+                                    $set('rally_tag', $slug);
+                                }
+                            })
+                            ->helperText('Only "Rallysprint" or "Rally" are allowed.')
+                            ->required(),
 
-                TextInput::make('rally_tag')
-                    ->label('Rally Slug')
-                    ->disabled()
-                    ->visible(fn ($get) => empty($get('id')))
-                    ->helperText('This slug will be generated automatically based on the rally name and cannot be changed once created.'),
+                        TextInput::make('rally_tag')
+                            ->label('Rally Slug')
+                            ->disabled()
+                            ->visible(fn ($get) => empty($get('id')))
+                            ->helperText('This slug will be generated automatically based on the rally name and cannot be changed once created.'),
+                    ]),
 
                 DatePicker::make('date_from')
                     ->native(false)
@@ -66,7 +70,7 @@ class RallyResource extends Resource
                             function ($attribute, $value, Closure $fail) use ($get) {
                                 $season = Season::find($get('season_id'));
 
-                                $seasonYear = (int) $season->year;
+                                $seasonYear = (int) $season?->year;
                                 $selectedYear = Carbon::parse($value)->year;
 
                                 if ($selectedYear !== $seasonYear) {
@@ -74,14 +78,16 @@ class RallyResource extends Resource
                                 }
                             },
                         ];
-                    }),
+                    })
+                    ->required(),
 
                 DatePicker::make('date_to')
                     ->native(false)
                     ->displayFormat('Y/m/d')
                     ->afterOrEqual('date_from')
                     ->closeOnDateSelection()
-                    ->prefix('Rally Ends'),
+                    ->prefix('Rally Ends')
+                    ->required(),
 
                 Select::make('location')
                     ->options([
@@ -103,7 +109,8 @@ class RallyResource extends Resource
                         'tarmac' => 'tarmac',
                         'snow' => 'snow',
                     ])
-                    ->inline(),
+                    ->inline()
+                    ->required(),
 
                 Select::make('season_id')
                     ->label('Season')
