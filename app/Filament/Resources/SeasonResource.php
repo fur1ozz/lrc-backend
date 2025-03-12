@@ -17,7 +17,7 @@ class SeasonResource extends Resource
 {
     protected static ?string $model = Season::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     public static function form(Form $form): Form
     {
@@ -27,7 +27,7 @@ class SeasonResource extends Resource
                     ->required()
                     ->integer()
                     ->minValue(2024)
-                    ->maxValue(2030)
+                    ->maxValue(2035)
                     ->placeholder('2025')
             ]);
     }
@@ -37,8 +37,9 @@ class SeasonResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id'),
-                Tables\Columns\TextColumn::make('year')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('year')->sortable()->searchable()->grow(),
             ])
+            ->striped()
             ->filters([
                 //
             ])
@@ -46,9 +47,7 @@ class SeasonResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 

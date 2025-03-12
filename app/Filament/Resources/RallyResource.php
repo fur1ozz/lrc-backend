@@ -16,7 +16,10 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -29,7 +32,7 @@ class RallyResource extends Resource
 {
     protected static ?string $model = Rally::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-flag';
 
     public static function form(Form $form): Form
     {
@@ -127,11 +130,11 @@ class RallyResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->sortable(),
-                TextColumn::make('rally_name')->searchable(),
-                TextColumn::make('date_from')->sortable(),
-                TextColumn::make('date_to'),
-                TextColumn::make('location')->badge()->color('purple'),
-                TextColumn::make('road_surface')
+                TextColumn::make('rally_name')->searchable()->weight(FontWeight::Bold),
+                TextColumn::make('date_from')->sortable()->date()->sinceTooltip(),
+                TextColumn::make('date_to')->date(),
+                TextColumn::make('location')->badge()->color('purple')->alignCenter(),
+                TextColumn::make('road_surface')->alignCenter()
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'gravel' => 'gravel',
@@ -139,9 +142,16 @@ class RallyResource extends Resource
                         'snow' => 'snow',
                     }),
                 TextColumn::make('season.year')->sortable(),
+                TextColumn::make('rally_tag')->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->striped()
             ->defaultSort('date_from', 'desc')
             ->searchPlaceholder('Search (Rally Name)')
+            ->recordClasses(function ($record) {
+                return $record->date_to < now()->toDateString()
+                    ? 'opacity-50'
+                    : '';
+            })
             ->filters([
                 SelectFilter::make('season_id')
                     ->label('Season')
@@ -152,6 +162,16 @@ class RallyResource extends Resource
                         return Season::where('year', Carbon::now()->year)->first()?->id ?? '';
                     }),
             ])
+            ->filtersTriggerAction(
+                fn (Action $action) => $action
+                    ->button()
+                    ->label('Filter'),
+            )
+            ->toggleColumnsTriggerAction(
+                fn (Action $action) => $action
+                    ->button()
+                    ->label('Toggle Columns'),
+            )
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
