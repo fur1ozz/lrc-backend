@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Rally extends Model
 {
@@ -18,6 +19,22 @@ class Rally extends Model
         'season_id',
         'rally_sequence',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($rally) {
+            // Auto-generate the rally_tag based on the rally_name
+            if (empty($rally->rally_tag) && !empty($rally->rally_name)) {
+                $rally->rally_tag = Str::slug($rally->rally_name);
+            }
+
+            // Auto-generate the rally_sequence for the specified season_id
+            if (empty($rally->rally_sequence) && !empty($rally->season_id)) {
+                $rally->rally_sequence = Rally::where('season_id', $rally->season_id)
+                        ->max('rally_sequence') + 1; // Get the next sequence number
+            }
+        });
+    }
 
     /**
      * Get the season that this rally belongs to.
