@@ -25,7 +25,10 @@ class Rally extends Model
         static::creating(function ($rally) {
             // Auto-generate the rally_tag based on the rally_name
             if (empty($rally->rally_tag) && !empty($rally->rally_name)) {
-                $rally->rally_tag = Str::slug($rally->rally_name);
+                $state = str_ireplace('Rallysprint', 'rally-sprint', $rally->rally_name);
+                $state = ucwords(strtolower($state));
+
+                $rally->rally_tag = Str::slug($state);
             }
 
             // Auto-generate the rally_sequence for the specified season_id
