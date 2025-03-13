@@ -54,6 +54,7 @@ class RallyResource extends Resource
                                 }
                             })
                             ->helperText('Only "Rallysprint" or "Rally" are allowed.')
+                            ->placeholder('Rally Latvia / Rallysprint Latvia')
                             ->required(),
 
                         TextInput::make('rally_tag')
@@ -97,8 +98,11 @@ class RallyResource extends Resource
                         'lv' => 'Latvia',
                         'ee' => 'Estonia',
                         'lt' => 'Lithuania',
+                        'pl' => 'Poland',
+                        'fi' => 'Finland',
                     ])
                     ->native(false)
+                    ->placeholder('Select the location')
                     ->required(),
 
                 ToggleButtons::make('road_surface')
@@ -121,6 +125,7 @@ class RallyResource extends Resource
                         Season::all()->pluck('year', 'id')->toArray()
                     )
                     ->searchable()
+                    ->placeholder('Select the Season')
                     ->required(),
             ]);
     }

@@ -14,6 +14,7 @@ class EditRally extends EditRecord
     {
         return "Edit Rally - ID: {$this->record->id}";
     }
+
     protected function getHeaderActions(): array
     {
         return [

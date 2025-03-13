@@ -5,10 +5,15 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\FolderResource\Pages;
 use App\Filament\Resources\FolderResource\RelationManagers;
 use App\Models\Folder;
+use App\Models\Rally;
 use App\Models\Season;
 use Carbon\Carbon;
+use Closure;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Resources\Resource;
@@ -18,7 +23,6 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class FolderResource extends Resource
@@ -31,7 +35,56 @@ class FolderResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('number')
+                    ->required()
+                    ->integer()
+                    ->placeholder('Enter the folder number')
+                    ->helperText('The number must be unique within the selected rally.')
+                    ->rules(function (Get $get) {
+                        return [
+                            function ($attribute, $value, Closure $fail) use ($get) {
+                                $rally = Rally::find($get('rally_id'));
+
+                                $folderId = $get('id');
+
+                                $exists = Folder::where('rally_id', $rally->id)
+                                    ->where('number', $value)
+                                    ->where('id', '!=', $folderId)
+                                    ->exists();
+
+                                if ($exists) {
+                                    $fail('This number folder already exists');
+                                }
+                            },
+                        ];
+                    }),
+
+                TextInput::make('title')
+                    ->required()
+                    ->placeholder('Enter the folder title')
+                    ->helperText('Provide a clear title for the folder. Recommended format - Latvian / English '),
+
+                Select::make('season_id')
+                    ->label('Season')
+                    ->options(Season::all()->pluck('year', 'id'))
+                    ->reactive()
+                    ->afterStateUpdated(function (callable $set) {
+                        $set('rally_id', null);
+                    })
+                    ->visible(fn ($get) => empty($get('id')))
+                    ->required()
+                    ->native(false)
+                    ->placeholder('Choose a season'),
+
+                Select::make('rally_id')
+                    ->label('Rally')
+                    ->options(fn (callable $get) => Rally::where('season_id', $get('season_id'))->pluck('rally_name', 'id')->toArray())
+                    ->required()
+                    ->visible(fn ($get) => empty($get('id')))
+                    ->disabled(fn ($get) => $get('season_id') === null)
+                    ->searchable()
+                    ->native(false)
+                    ->placeholder('Choose a rally'),
             ]);
     }
 
