@@ -155,9 +155,7 @@ class RallyResource extends Resource
             ->filters([
                 SelectFilter::make('season_id')
                     ->label('Season')
-                    ->options(
-                        Season::query()->orderBy('year', 'desc')->pluck('year', 'id')->toArray()
-                    )
+                    ->relationship('season', 'year')
                     ->default(function () {
                         return Season::where('year', Carbon::now()->year)->first()?->id ?? '';
                     }),
