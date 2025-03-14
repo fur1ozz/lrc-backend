@@ -31,6 +31,10 @@ class FolderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Rally Info';
+
+    protected static ?int $navigationSort = 4;
+
     public static function form(Form $form): Form
     {
         return $form
@@ -44,16 +48,15 @@ class FolderResource extends Resource
                         return [
                             function ($attribute, $value, Closure $fail) use ($get) {
                                 $rally = Rally::find($get('rally_id'));
-
                                 $folderId = $get('id');
 
                                 $exists = Folder::where('rally_id', $rally->id)
                                     ->where('number', $value)
-                                    ->where('id', '!=', $folderId)
+                                    ->when($folderId, fn($query) => $query->where('id', '!=', $folderId))
                                     ->exists();
 
                                 if ($exists) {
-                                    $fail('This number folder already exists');
+                                    $fail("The folder number {$value} is already used in this rally.");
                                 }
                             },
                         ];
@@ -131,7 +134,7 @@ class FolderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\DocumentsRelationManager::class
         ];
     }
 

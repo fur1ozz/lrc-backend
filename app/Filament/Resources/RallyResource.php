@@ -24,6 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -33,6 +34,19 @@ class RallyResource extends Resource
     protected static ?string $model = Rally::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-flag';
+
+    protected static ?string $navigationGroup = 'Rally Info';
+
+    protected static ?int $navigationSort = 0;
+
+    protected static ?string $recordTitleAttribute = 'rally_name';
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Season' => $record->season->year,
+        ];
+    }
 
     public static function form(Form $form): Form
     {
@@ -49,8 +63,7 @@ class RallyResource extends Resource
                                     $state = str_ireplace('Rallysprint', 'rally-sprint', $state);
                                     $state = ucwords(strtolower($state));
 
-                                    $slug = Str::slug($state);
-                                    $set('rally_tag', $slug);
+                                    $set('rally_tag', Str::slug($state));
                                 }
                             })
                             ->helperText('Only "Rallysprint" or "Rally" are allowed.')
@@ -187,7 +200,7 @@ class RallyResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\FoldersRelationManager::class
         ];
     }
 

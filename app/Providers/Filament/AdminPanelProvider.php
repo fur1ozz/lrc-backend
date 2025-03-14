@@ -6,6 +6,8 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -33,6 +35,32 @@ class AdminPanelProvider extends PanelProvider
                 'snow' => Color::hex('#48CAE4'),
                 'gravel' => Color::hex('#B08968'),
                 'tarmac' => Color::Slate,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Rally Info')
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label('Results')
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label('Overall Data')
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label('Participants')
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label('LRČ Website')
+            ])
+            ->navigationItems([
+                NavigationItem::make('Homepage')
+                    ->url('https://latvianrally.vercel.app/lv/home', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-home')
+                    ->group('LRČ Website'),
+                NavigationItem::make('Seasons')
+                    ->url('https://latvianrally.vercel.app/lv/seasons', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-calendar-days')
+                    ->group('LRČ Website')
             ])
             ->favicon('images/favicon.ico')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

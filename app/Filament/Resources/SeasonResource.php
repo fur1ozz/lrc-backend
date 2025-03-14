@@ -19,6 +19,8 @@ class SeasonResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
+    protected static ?string $navigationGroup = 'Overall Data';
+
     public static function form(Form $form): Form
     {
         return $form

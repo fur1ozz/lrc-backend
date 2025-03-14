@@ -46,4 +46,9 @@ class Rally extends Model
     {
         return $this->belongsTo(Season::class);
     }
+
+    public function folders()
+    {
+        return $this->hasMany(Folder::class);
+    }
 }
