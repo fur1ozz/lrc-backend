@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\RoadSurfaceEnum;
 use App\Filament\Resources\RallyResource\Pages;
 use App\Filament\Resources\RallyResource\RelationManagers;
 use App\Models\Rally;
@@ -120,14 +121,14 @@ class RallyResource extends Resource
 
                 ToggleButtons::make('road_surface')
                     ->options([
-                        'gravel' => 'Gravel',
-                        'tarmac' => 'Tarmac',
-                        'snow' => 'Snow',
+                        RoadSurfaceEnum::GRAVEL->value => RoadSurfaceEnum::GRAVEL->label(),
+                        RoadSurfaceEnum::TARMAC->value => RoadSurfaceEnum::TARMAC->label(),
+                        RoadSurfaceEnum::SNOW->value => RoadSurfaceEnum::SNOW->label(),
                     ])
                     ->colors([
-                        'gravel' => 'gravel',
-                        'tarmac' => 'tarmac',
-                        'snow' => 'snow',
+                        RoadSurfaceEnum::GRAVEL->value => RoadSurfaceEnum::GRAVEL->value,
+                        RoadSurfaceEnum::TARMAC->value => RoadSurfaceEnum::TARMAC->value,
+                        RoadSurfaceEnum::SNOW->value => RoadSurfaceEnum::SNOW->value,
                     ])
                     ->inline()
                     ->required(),
@@ -152,12 +153,13 @@ class RallyResource extends Resource
                 TextColumn::make('date_from')->sortable()->date()->sinceTooltip(),
                 TextColumn::make('date_to')->date(),
                 TextColumn::make('location')->badge()->color('purple')->alignCenter(),
-                TextColumn::make('road_surface')->alignCenter()
+                TextColumn::make('road_surface')
+                    ->alignCenter()
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'gravel' => 'gravel',
-                        'tarmac' => 'tarmac',
-                        'snow' => 'snow',
+                    ->color(fn (RoadSurfaceEnum $state): string => match ($state) {
+                        RoadSurfaceEnum::GRAVEL => RoadSurfaceEnum::GRAVEL->value,
+                        RoadSurfaceEnum::TARMAC => RoadSurfaceEnum::TARMAC->value,
+                        RoadSurfaceEnum::SNOW => RoadSurfaceEnum::SNOW->value,
                     }),
                 TextColumn::make('season.year')->sortable(),
                 TextColumn::make('rally_tag')->toggleable(isToggledHiddenByDefault: true),

@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Enums\RoadSurfaceEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -18,6 +19,10 @@ class Rally extends Model
         'rally_tag',
         'season_id',
         'rally_sequence',
+    ];
+
+    protected $casts = [
+        'road_surface' => RoadSurfaceEnum::class,
     ];
 
     protected static function booted(): void

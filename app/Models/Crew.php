@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DriveTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,6 +19,10 @@ class Crew extends Model
         'car',
         'drive_type',
         'drive_class',
+    ];
+
+    protected $casts = [
+        'drive_type' => DriveTypeEnum::class,
     ];
 
     public function driver()
