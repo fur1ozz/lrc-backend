@@ -12,7 +12,7 @@ class EditFolder extends EditRecord
 
     public function getTitle(): string
     {
-        return "Edit Folder - ID: {$this->record->id}";
+        return "Edit Folder for - {$this->record->rally->rally_name} {$this->record->rally->season->year}";
     }
 
     protected function getHeaderActions(): array

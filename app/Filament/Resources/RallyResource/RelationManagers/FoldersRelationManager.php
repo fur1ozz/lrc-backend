@@ -59,13 +59,13 @@ class FoldersRelationManager extends RelationManager
                 TextColumn::make('number')->label('Number')->alignRight(),
                 TextColumn::make('title')->label('Title')
                     ->grow()
-                    ->weight(FontWeight::SemiBold)
-                    ->action(fn ($record) => redirect()->to(route('filament.admin.resources.folders.edit', $record->id))),
+                    ->weight(FontWeight::SemiBold),
             ])
             ->defaultSort('number')
             ->filters([
                 //
             ])
+            ->recordUrl(fn ($record) => route('filament.admin.resources.folders.edit', $record->id))
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Add folder'),

@@ -12,7 +12,7 @@ class EditRally extends EditRecord
 
     public function getTitle(): string
     {
-        return "Edit Rally - ID: {$this->record->id}";
+        return "Edit Rally - {$this->record->rally_name} {$this->record->season->year}";
     }
 
     protected function getHeaderActions(): array
