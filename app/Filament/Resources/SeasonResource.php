@@ -8,6 +8,7 @@ use App\Models\Season;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,7 +47,8 @@ class SeasonResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color(Color::Sky),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

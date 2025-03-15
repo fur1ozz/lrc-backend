@@ -10,6 +10,7 @@ use App\Models\Season;
 use Carbon\Carbon;
 use Closure;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -17,6 +18,7 @@ use Filament\Forms\Get;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -39,6 +41,8 @@ class FolderResource extends Resource
     {
         return $form
             ->schema([
+                Section::make()
+                    ->schema([
                 TextInput::make('number')
                     ->required()
                     ->integer()
@@ -88,6 +92,8 @@ class FolderResource extends Resource
                     ->searchable()
                     ->native(false)
                     ->placeholder('Choose a rally'),
+                    ])
+                    ->columns(2)
             ]);
     }
 
@@ -123,7 +129,8 @@ class FolderResource extends Resource
             ->defaultSort('number')
             ->defaultGroup('rally.rally_name')
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color(Color::Sky),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

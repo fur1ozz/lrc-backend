@@ -5,6 +5,7 @@ namespace App\Filament\Resources\FolderResource\RelationManagers;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -56,7 +57,8 @@ class DocumentsRelationManager extends RelationManager
                     ->label('Add Document'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color(Color::Sky),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Rose,
                 'purple' => Color::Purple,
                 'snow' => Color::hex('#48CAE4'),
                 'gravel' => Color::hex('#B08968'),

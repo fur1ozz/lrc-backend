@@ -8,6 +8,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -71,7 +72,8 @@ class FoldersRelationManager extends RelationManager
                     ->label('Add folder'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color(Color::Sky),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
