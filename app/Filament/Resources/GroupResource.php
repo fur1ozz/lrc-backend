@@ -2,39 +2,38 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SeasonResource\Pages;
-use App\Filament\Resources\SeasonResource\RelationManagers;
-use App\Models\Season;
+use App\Filament\Resources\GroupResource\Pages;
+use App\Filament\Resources\GroupResource\RelationManagers;
+use App\Models\Group;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class SeasonResource extends Resource
+class GroupResource extends Resource
 {
-    protected static ?string $model = Season::class;
+    protected static ?string $model = Group::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-group';
 
     protected static ?string $navigationGroup = 'Overall Data';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('year')
+                TextInput::make('group_name')
                     ->required()
-                    ->integer()
-                    ->minValue(2024)
-                    ->maxValue(2035)
-                    ->placeholder('2025')
+                    ->afterStateUpdated(fn (callable $set, $state) => $set('group_name', strtoupper($state))),
             ]);
     }
 
@@ -42,8 +41,8 @@ class SeasonResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id'),
-                Tables\Columns\TextColumn::make('year')->sortable()->grow()->weight(FontWeight::Bold),
+                TextColumn::make('id'),
+                TextColumn::make('group_name')->grow()->weight(FontWeight::Bold),
             ])
             ->striped()
             ->filters([
@@ -58,16 +57,16 @@ class SeasonResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ClassesRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSeasons::route('/'),
-            'create' => Pages\CreateSeason::route('/create'),
-            'edit' => Pages\EditSeason::route('/{record}/edit'),
+            'index' => Pages\ListGroups::route('/'),
+            'create' => Pages\CreateGroup::route('/create'),
+            'edit' => Pages\EditGroup::route('/{record}/edit'),
         ];
     }
 }

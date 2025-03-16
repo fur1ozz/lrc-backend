@@ -11,6 +11,10 @@ class Group extends Model
 
     protected $fillable = [
         'group_name',
-        'season',
     ];
+
+    public function classes()
+    {
+        return $this->hasMany(GroupClass::class);
+    }
 }

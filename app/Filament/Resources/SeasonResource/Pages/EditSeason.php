@@ -12,13 +12,6 @@ class EditSeason extends EditRecord
 {
     protected static string $resource = SeasonResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
-
     protected function getSaveFormAction(): Action
     {
         return parent::getSaveFormAction()->color(Color::Sky);

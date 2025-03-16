@@ -11,7 +11,12 @@ class GroupClass extends Model
 
     protected $fillable = [
         'class_name',
-        'season',
+        'group_id',
     ];
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
 
 }

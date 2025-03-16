@@ -219,7 +219,7 @@ class RallyResource extends Resource
                 //
             ]),
             RelationGroup::make('Results', [
-                //
+                // probably only overall results
             ]),
         ];
     }
