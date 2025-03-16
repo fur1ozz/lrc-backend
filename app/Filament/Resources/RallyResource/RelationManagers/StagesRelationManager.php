@@ -108,10 +108,10 @@ class StagesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('rally_id')
+            ->recordTitle('Stage')
             ->columns([
                 TextColumn::make('stage_number')->numeric()->label('Stage #')->prefix('#')->alignRight(),
-                TextColumn::make('stage_name')->searchable()->weight(FontWeight::Bold),
+                TextColumn::make('stage_name')->weight(FontWeight::Bold),
                 TextColumn::make('distance_km')->suffix(' km')->label('Distance')->alignCenter(),
                 TextColumn::make('start_date')->date()->sinceTooltip()->alignCenter(),
                 TextColumn::make('start_time')->time()->alignCenter(),

@@ -211,6 +211,7 @@ class RallyResource extends Resource
     {
         return [
             RelationGroup::make('News, Stages and Documents', [
+                RelationManagers\NewsRelationManager::class,
                 RelationManagers\StagesRelationManager::class,
                 RelationManagers\FoldersRelationManager::class,
             ]),
