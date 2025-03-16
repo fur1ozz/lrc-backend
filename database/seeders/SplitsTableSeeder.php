@@ -8,6 +8,8 @@ use Illuminate\Database\Seeder;
 
 class SplitsTableSeeder extends Seeder
 {
+
+    // TODO probably delete this file. This only seeds to te rally cesis
     public function run()
     {
         $stageIds = Stage::where('rally_id', 4)->pluck('id');

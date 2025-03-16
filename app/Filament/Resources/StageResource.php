@@ -213,7 +213,7 @@ class StageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\SplitsRelationManager::class,
         ];
     }
 
