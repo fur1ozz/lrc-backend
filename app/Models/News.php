@@ -13,6 +13,7 @@ class News extends Model
         'pub_date_time',
         'title',
         'paragraph',
+        'body',
         'img_src',
         'rally_id'
     ];
