@@ -33,8 +33,8 @@ app/Filament/Resources/UserResource.php
 ```
 
 ## 📌 Customizing Filament
-- **Change Admin Path:** Edit the `path` in `config/filament.php`:
+- **Change Admin Path:** Edit the `->path()` in `AdminPanelProvider.php`:
 
 ```php
-'path' => 'admin',
+->path('admin')
 ```

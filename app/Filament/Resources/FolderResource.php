@@ -24,7 +24,9 @@ use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class FolderResource extends Resource
@@ -43,55 +45,55 @@ class FolderResource extends Resource
             ->schema([
                 Section::make()
                     ->schema([
-                TextInput::make('number')
-                    ->required()
-                    ->integer()
-                    ->placeholder('Enter the folder number')
-                    ->helperText('The number must be unique within the selected rally.')
-                    ->rules(function (Get $get) {
-                        return [
-                            function ($attribute, $value, Closure $fail) use ($get) {
-                                $rally = Rally::find($get('rally_id'));
-                                $folderId = $get('id');
+                        TextInput::make('number')
+                            ->required()
+                            ->integer()
+                            ->placeholder('Enter the folder number')
+                            ->helperText('The number must be unique within the selected rally.')
+                            ->rules(function (Get $get) {
+                                return [
+                                    function ($attribute, $value, Closure $fail) use ($get) {
+                                        $rally = Rally::find($get('rally_id'));
+                                        $folderId = $get('id');
 
-                                $exists = Folder::where('rally_id', $rally->id)
-                                    ->where('number', $value)
-                                    ->when($folderId, fn($query) => $query->where('id', '!=', $folderId))
-                                    ->exists();
+                                        $exists = Folder::where('rally_id', $rally->id)
+                                            ->where('number', $value)
+                                            ->when($folderId, fn($query) => $query->where('id', '!=', $folderId))
+                                            ->exists();
 
-                                if ($exists) {
-                                    $fail("The folder number {$value} is already used in this rally.");
-                                }
-                            },
-                        ];
-                    }),
+                                        if ($exists) {
+                                            $fail("The folder number {$value} is already used in this rally.");
+                                        }
+                                    },
+                                ];
+                            }),
 
-                TextInput::make('title')
-                    ->required()
-                    ->placeholder('Enter the folder title')
-                    ->helperText('Provide a clear title for the folder. Recommended format - Latvian / English '),
+                        TextInput::make('title')
+                            ->required()
+                            ->placeholder('Enter the folder title')
+                            ->helperText('Provide a clear title for the folder. Recommended format - Latvian / English '),
 
-                Select::make('season_id')
-                    ->label('Season')
-                    ->options(Season::all()->pluck('year', 'id'))
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set) {
-                        $set('rally_id', null);
-                    })
-                    ->visible(fn ($get) => empty($get('id')))
-                    ->required()
-                    ->native(false)
-                    ->placeholder('Choose a season'),
+                        Select::make('season_id')
+                            ->label('Season')
+                            ->options(Season::all()->pluck('year', 'id'))
+                            ->reactive()
+                            ->afterStateUpdated(function (callable $set) {
+                                $set('rally_id', null);
+                            })
+                            ->visible(fn ($get) => empty($get('id')))
+                            ->required()
+                            ->native(false)
+                            ->placeholder('Choose a season'),
 
-                Select::make('rally_id')
-                    ->label('Rally')
-                    ->options(fn (callable $get) => Rally::where('season_id', $get('season_id'))->pluck('rally_name', 'id')->toArray())
-                    ->required()
-                    ->visible(fn ($get) => empty($get('id')))
-                    ->disabled(fn ($get) => $get('season_id') === null)
-                    ->searchable()
-                    ->native(false)
-                    ->placeholder('Choose a rally'),
+                        Select::make('rally_id')
+                            ->label('Rally')
+                            ->options(fn (callable $get) => Rally::where('season_id', $get('season_id'))->pluck('rally_name', 'id')->toArray())
+                            ->required()
+                            ->visible(fn ($get) => empty($get('id')))
+                            ->disabled(fn ($get) => $get('season_id') === null)
+                            ->searchable()
+                            ->native(false)
+                            ->placeholder('Choose a rally'),
                     ])
                     ->columns(2)
             ]);
@@ -114,7 +116,11 @@ class FolderResource extends Resource
                         return Season::where('year', Carbon::now()->year)->first()?->id ?? '';
                     }),
             ])
-            ->groups(['rally.rally_name'])
+            ->groups([
+                Group::make('rally.date_from')
+                    ->getTitleFromRecordUsing(fn (Model $record): string => ucfirst($record->rally->rally_name))
+                    ->collapsible()
+            ])
             ->filtersTriggerAction(
                 fn (Action $action) => $action
                     ->button()
@@ -127,7 +133,10 @@ class FolderResource extends Resource
             )
             ->groupingSettingsInDropdownOnDesktop()
             ->defaultSort('number')
-            ->defaultGroup('rally.rally_name')
+            ->defaultGroup(
+                Group::make('rally.date_from')
+                    ->getTitleFromRecordUsing(fn (Model $record): string => ucfirst($record->rally->rally_name))
+            )
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->color(Color::Sky),
