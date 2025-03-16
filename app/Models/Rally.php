@@ -56,4 +56,9 @@ class Rally extends Model
     {
         return $this->hasMany(Folder::class);
     }
+
+    public function stages()
+    {
+        return $this->hasMany(Stage::class);
+    }
 }

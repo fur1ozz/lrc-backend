@@ -69,7 +69,7 @@ class FoldersRelationManager extends RelationManager
             ->recordUrl(fn ($record) => route('filament.admin.resources.folders.edit', $record->id))
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Add folder'),
+                    ->label('Add Folder'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

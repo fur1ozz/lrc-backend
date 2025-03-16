@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Alignment;
@@ -209,7 +210,16 @@ class RallyResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\FoldersRelationManager::class
+            RelationGroup::make('News, Stages and Documents', [
+                RelationManagers\StagesRelationManager::class,
+                RelationManagers\FoldersRelationManager::class,
+            ]),
+            RelationGroup::make('Crews', [
+                //
+            ]),
+            RelationGroup::make('Results', [
+                //
+            ]),
         ];
     }
 
