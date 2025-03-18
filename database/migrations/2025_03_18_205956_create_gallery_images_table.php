@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('rally_id')->constrained()->onDelete('cascade');
             $table->string('img_src');
-            $table->integer('position')->default(0);
             $table->string('created_by')->nullable();
             $table->timestamps();
         });
