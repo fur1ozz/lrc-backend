@@ -67,8 +67,8 @@ class Rally extends Model
         return $this->hasMany(News::class);
     }
 
-    public function galleries()
+    public function galleryImages()
     {
-        return $this->hasMany(Gallery::class);
+        return $this->hasMany(GalleryImage::class);
     }
 }
