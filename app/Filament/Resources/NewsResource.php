@@ -136,7 +136,7 @@ class NewsResource extends Resource
 
                 TextColumn::make('pub_date_time')
                     ->label('Publish Date')
-                    ->formatStateUsing(fn ($state) => Carbon::parse($state)->format('M d, Y H:i'))
+                    ->dateTime('M d, Y H:i'),
             ])
             ->filters([
                 SelectFilter::make('season')
@@ -159,7 +159,7 @@ class NewsResource extends Resource
             ->groupRecordsTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Group Stages'),
+                    ->label('Group News'),
             )
             ->groupingSettingsInDropdownOnDesktop()
             ->defaultSort('pub_date_time', 'desc')

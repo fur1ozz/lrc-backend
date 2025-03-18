@@ -129,7 +129,7 @@ class FolderResource extends Resource
             ->groupRecordsTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Group folders'),
+                    ->label('Group Folders'),
             )
             ->groupingSettingsInDropdownOnDesktop()
             ->defaultSort('number')
