@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\SelectFilter;
@@ -53,7 +54,9 @@ class GalleryImageResource extends Resource
                             ->maxSize(2048)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->multiple(fn ($get) => empty($get('id')))
-                            ->helperText(fn ($get) => empty($get('id')) ? 'You can upload multiple images here.' : ''),
+                            ->helperText(fn ($get) => empty($get('id')) ? 'You can upload up to 100 images at once.' : '')
+                            ->maxFiles(100)
+                            ->reorderable(),
                     ])->collapsible(),
 
                 Forms\Components\Group::make()
@@ -110,7 +113,10 @@ class GalleryImageResource extends Resource
                 Tables\Columns\TextColumn::make('created_by')
                     ->label('Created By')
                     ->default('Unknown')
-                    ->searchable(),
+                    ->searchable()
+                    ->color(fn ($state) => $state === 'Unknown' ? 'gray' : 'black')
+                    ->weight(fn ($state) => $state === 'Unknown' ? FontWeight::Thin : FontWeight::Bold)
+                    ->extraAttributes(fn ($state) => $state === 'Unknown' ? ['class' => 'italic'] : []),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Uploaded At')
