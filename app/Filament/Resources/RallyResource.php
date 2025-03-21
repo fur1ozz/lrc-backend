@@ -222,7 +222,8 @@ class RallyResource extends Resource
                 // probably only overall results
             ]),
             RelationGroup::make('Winner and Gallery', [
-                RelationManagers\RallyWinnerRelationManager::class
+                RelationManagers\RallyWinnerRelationManager::class,
+                RelationManagers\GalleryImagesRelationManager::class,
             ]),
         ];
     }
