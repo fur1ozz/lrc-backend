@@ -221,6 +221,9 @@ class RallyResource extends Resource
             RelationGroup::make('Results', [
                 // probably only overall results
             ]),
+            RelationGroup::make('Winner and Gallery', [
+                RelationManagers\RallyWinnerRelationManager::class
+            ]),
         ];
     }
 
