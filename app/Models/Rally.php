@@ -71,4 +71,9 @@ class Rally extends Model
     {
         return $this->hasMany(GalleryImage::class);
     }
+
+    public function rallyWinner()
+    {
+        return $this->hasOne(PrevWinner::class);
+    }
 }
