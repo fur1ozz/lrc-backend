@@ -38,6 +38,18 @@ class PrevWinnerResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getNavigationBadge(): string
+    {
+        return Rally::where('date_to', '<=', Carbon::today())
+        ->whereNotIn('id', PrevWinner::pluck('rally_id'))
+        ->count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Number of rallies with unassigned winners';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
