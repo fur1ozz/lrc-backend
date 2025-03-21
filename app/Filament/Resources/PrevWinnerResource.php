@@ -18,6 +18,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +33,8 @@ class PrevWinnerResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-trophy';
 
     protected static ?string $navigationGroup = 'Overall Data';
+
+    protected static ?string $navigationLabel = 'Winners';
 
     protected static ?int $navigationSort = 1;
 
@@ -123,16 +127,12 @@ class PrevWinnerResource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->with(['rally', 'crew.driver', 'crew.coDriver']);
-    }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('rally.rally_name'),
+                Tables\Columns\TextColumn::make('rally.rally_name')
+                    ->description(fn (Model $record): string => 'Season: '.$record->rally->season->year),
 
                 Tables\Columns\TextColumn::make('crew')
                     ->label('Driver & Co-Driver')
@@ -156,8 +156,18 @@ class PrevWinnerResource extends Resource
                     ->square(),
             ])
             ->filters([
-                //
+                SelectFilter::make('season')
+                    ->label('Season')
+                    ->relationship('rally.season', 'year')
+                    ->default(function () {
+                        return Season::where('year', Carbon::now()->year)->first()?->id ?? '';
+                    }),
             ])
+            ->filtersTriggerAction(
+                fn (Action $action) => $action
+                    ->button()
+                    ->label('Filter'),
+            )
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->color(Color::Sky),
