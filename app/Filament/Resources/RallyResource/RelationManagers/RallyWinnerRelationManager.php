@@ -43,7 +43,7 @@ class RallyWinnerRelationManager extends RelationManager
                                     ->orderByRaw('REGEXP_REPLACE(crew_number, \'[0-9]\', \'\') ASC')
                                     ->get()
                                     ->mapWithKeys(fn ($crew) => [
-                                        $crew->id => "{$crew->driver?->name} {$crew->driver?->surname} & {$crew->coDriver?->name} {$crew->coDriver?->surname} (Car: {$crew->car}, No: {$crew->crew_number})"
+                                        $crew->id => "{$crew->driver?->name} {$crew->driver?->surname} / {$crew->coDriver?->name} {$crew->coDriver?->surname} (Car: {$crew->car}, No: {$crew->crew_number})"
                                     ])
                                     ->toArray();
                             })
@@ -95,7 +95,7 @@ class RallyWinnerRelationManager extends RelationManager
                         $driver = $record->crew->driver;
                         $coDriver = $record->crew->coDriver;
 
-                        return "{$driver->name} {$driver->surname} & {$coDriver->name} {$coDriver->surname}";
+                        return "{$driver->name} {$driver->surname} / {$coDriver->name} {$coDriver->surname}";
                     })
                     ->description(fn (Model $record): string => Str::limit('Car: '.$record->crew->car.', No: '.$record->crew->crew_number, 70)),
 

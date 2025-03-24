@@ -76,4 +76,9 @@ class Rally extends Model
     {
         return $this->hasOne(PrevWinner::class);
     }
+
+    public function crews()
+    {
+        return $this->hasMany(Crew::class);
+    }
 }
