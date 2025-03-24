@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('crew_id');
             $table->unsignedBigInteger('stage_id');
-            $table->time('crew_start_time')->nullable();
             $table->string('time_taken', 12)->nullable();
             $table->float('avg_speed', 8, 2);
             $table->timestamps();

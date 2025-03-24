@@ -116,7 +116,6 @@ class StageWinTest extends TestCase
         $stageResult = StageResults::create([
             'crew_id'=>$crew->id,
             'stage_id'=>$stage->id,
-            'crew_start_time'=>null,
             'time_taken'=>'06:35.47',
             'avg_speed'=>'104.23'
         ]);
