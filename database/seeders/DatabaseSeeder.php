@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
 
             // other
             PrevWinnerSeeder::class,
+
+            // Results
+            RetirementSeeder::class,
         ]);
     }
 }
