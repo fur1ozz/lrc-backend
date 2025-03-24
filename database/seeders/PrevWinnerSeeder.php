@@ -6,11 +6,29 @@ use App\Models\Crew;
 use App\Models\Rally;
 use Illuminate\Database\Seeder;
 use App\Models\PrevWinner;
+use Illuminate\Support\Facades\Storage;
 
 class PrevWinnerSeeder extends Seeder
 {
     public function run()
     {
+        if (!Storage::disk('public')->exists('rally_winners')) {
+            Storage::disk('public')->makeDirectory('rally_winners');
+        }
+
+        $dummyImages = [
+            'winner-1.jpg',
+        ];
+
+        foreach ($dummyImages as $image) {
+            $sourcePath = database_path("seeders/images/rally_winners/{$image}");
+            $targetPath = "rally_winners/{$image}";
+
+            if (file_exists($sourcePath) && !Storage::disk('public')->exists($targetPath)) {
+                Storage::disk('public')->put($targetPath, file_get_contents($sourcePath));
+            }
+        }
+
         $rallies = Rally::where('season_id', 1)->get();
 
         foreach ($rallies as $rally) {
@@ -21,7 +39,7 @@ class PrevWinnerSeeder extends Seeder
                     'rally_id' => $rally->id,
                     'crew_id' => $crew->id,
                     'feedback' => $this->generateRandomFeedback(),
-                    'winning_img' => null,
+                    'winning_img' => 'rally_winners/winner-1.jpg',
                 ]);
             }
         }
