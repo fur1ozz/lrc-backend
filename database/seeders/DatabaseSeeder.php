@@ -26,8 +26,9 @@ class DatabaseSeeder extends Seeder
             // other
             PrevWinnerSeeder::class,
 
-            // Results
+            // Results (2024 season only)
             RetirementSeeder::class,
+            PenaltySeeder::class,
         ]);
     }
 }
