@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             PenaltySeeder::class,
             StageResultsSeeder::class,
             SplitTimesSeeder::class,
+            OverallResultsSeeder::class,
         ]);
     }
 }

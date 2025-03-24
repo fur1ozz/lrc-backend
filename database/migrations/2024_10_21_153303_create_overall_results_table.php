@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('crew_id');
             $table->unsignedBigInteger('rally_id');
-            $table->string('total_time', 12)->nullable();
+            $table->bigInteger('total_time');
             $table->timestamps();
 
             $table->foreign('crew_id')->references('id')->on('crews')->onDelete('cascade');
