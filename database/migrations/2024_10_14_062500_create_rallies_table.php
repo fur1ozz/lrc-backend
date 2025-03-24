@@ -13,7 +13,7 @@ class CreateRalliesTable extends Migration
             $table->date('date_from');
             $table->date('date_to');
             $table->string('location');
-            $table->string('road_surface');
+            $table->enum('road_surface', ['gravel', 'tarmac', 'snow'])->default('gravel');
             $table->string('rally_tag');
             $table->unsignedBigInteger('season_id');
             $table->integer('rally_sequence');

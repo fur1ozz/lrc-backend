@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('prev_winners', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('rally_id');
+            $table->unsignedBigInteger('rally_id')->unique();
             $table->unsignedBigInteger('crew_id');
             $table->text('feedback');
             $table->string('winning_img')->nullable();
