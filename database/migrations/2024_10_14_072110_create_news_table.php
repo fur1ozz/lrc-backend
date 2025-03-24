@@ -11,9 +11,10 @@ class CreateNewsTable extends Migration
     {
         Schema::create('news', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('pub_date_time');
+            $table->dateTime('pub_date_time')->nullable();
             $table->string('title');
             $table->text('paragraph');
+            $table->longText('body')->nullable();
             $table->string('img_src')->nullable();
             $table->foreignId('rally_id')->constrained()->onDelete('cascade');
             $table->timestamps();

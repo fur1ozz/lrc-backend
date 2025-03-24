@@ -13,7 +13,6 @@ class StageResults extends Model
     protected $fillable = [
         'crew_id',
         'stage_id',
-        'crew_start_time',
         'time_taken',
         'avg_speed'
     ];

@@ -2,107 +2,54 @@
 
 namespace Database\Seeders;
 
+use App\Models\Rally;
+use App\Models\Stage;
 use Illuminate\Database\Seeder;
 use App\Models\Crew;
-use App\Models\Stage;
 use App\Models\Penalties;
-use App\Models\Participant;
-use Illuminate\Support\Facades\Storage;
 
 class PenaltySeeder extends Seeder
 {
     public function run()
     {
-        $json = Storage::get('penalty_data.json');  // Ensure you have penalty_data.json in storage/app
-        $penaltiesData = json_decode($json, true);
+        $penalties = [
+            'Jump start at SS-{stage}' => 10000, // 0:10.00 → 10000 ms
+            '1 Minute late at TC-{stage}' => 10000, // 0:10.00 → 10000 ms
+            '3 Minutes late at TC-{stage}' => 30000, // 0:30.00 → 30000 ms
+            '5 Minutes late at TC-{stage}' => 50000, // 0:50.00 → 50000 ms
+            '8 Minutes late at TC-{stage}' => 80000, // 1:20.00 → 80000 ms
+            'Stewards decision' => 20000, // 0:20.00 → 20000 ms
+            'Exceeding speed limit in service park' => 40000, // 0:40.00 → 40000 ms
+            'Unauthorized service assistance' => 60000, // 1:00.00 → 60000 ms
+            'Failure to follow official route' => 90000, // 1:30.00 → 90000 ms
+            'Missing time control' => 120000, // 2:00.00 → 120000 ms
+            'Illegal tire change' => 15000, // 0:15.00 → 15000 ms
+            'Failure to wear safety equipment' => 25000, // 0:25.00 → 25000 ms
+            'Exceeding max service time' => 45000, // 0:45.00 → 45000 ms
+            'Late arrival at parc fermé' => 35000, // 0:35.00 → 35000 ms
+            'Missed driver briefing' => 20000, // 0:20.00 → 20000 ms
+            'Improper refueling procedure' => 50000, // 0:50.00 → 50000 ms
+        ];
 
-        $rallyId = 4;  // We're working with rally ID 4
+        $rallies = Rally::where('season_id', 1)->get();
 
-        foreach ($penaltiesData as $data) {
-            // Split driver and co-driver full names
-            list($driverFirstName, $driverLastName) = explode(' ', $data['driver'], 2);
-            list($coDriverFirstName, $coDriverLastName) = explode(' ', $data['coDriver'], 2);
+        foreach ($rallies as $rally) {
+            $stages = Stage::where('rally_id', $rally->id)->get();
+            $crews = Crew::where('rally_id', $rally->id)->inRandomOrder()->limit(20)->get();
 
-            // Retrieve all participants to avoid ambiguity
-            $drivers = Participant::where('name', $driverFirstName)
-                ->where('surname', $driverLastName)
-                ->get();
+            foreach ($crews as $crew) {
+                $penaltyKey = array_rand($penalties);
+                $penaltyAmount = $penalties[$penaltyKey];
 
-            $coDrivers = Participant::where('name', $coDriverFirstName)
-                ->where('surname', $coDriverLastName)
-                ->get();
+                $stage = $stages->random();
+                $penaltyType = str_replace('{stage}', $stage->stage_number, $penaltyKey);
 
-            // Log to check if participants were found
-            if ($drivers->isEmpty() || $coDrivers->isEmpty()) {
-                $this->command->info("Driver or Co-driver not found: {$data['driver']} / {$data['coDriver']}");
-                continue; // Skip this crew if we can't find both participants
-            }
-
-            // Check each driver and co-driver against the crew for the specific rally
-            foreach ($drivers as $driver) {
-                foreach ($coDrivers as $coDriver) {
-                    $crew = Crew::where('rally_id', $rallyId)
-                        ->where('driver_id', $driver->id)
-                        ->where('co_driver_id', $coDriver->id)
-                        ->first();
-
-                    if ($crew) {
-                        $this->command->info("Found crew: {$data['crewNumber']} - {$data['driver']} / {$data['coDriver']}");
-
-                        foreach ($data['penalties'] as $penalty) {
-                            // Extract stage number from the reason (e.g., SS-1 or TC-1)
-                            if (preg_match('/[STC]-([0-9]+)/', $penalty['reason'], $matches)) {
-                                $stageNumber = $matches[1];
-
-                                // Split the penalty time into minutes and seconds.milliseconds
-                                $penaltyTimeParts = explode(':', $penalty['penaltyTime']);
-                                $minutes = (int)$penaltyTimeParts[0];
-
-                                // Handle the seconds and milliseconds
-                                if (isset($penaltyTimeParts[1])) {
-                                    // Handle the case where seconds may contain milliseconds
-                                    $secondsParts = explode('.', $penaltyTimeParts[1]);
-                                    $seconds = (int)$secondsParts[0]; // Get the whole seconds
-                                    $milliseconds = isset($secondsParts[1]) ? str_pad($secondsParts[1], 3, '0') : '000'; // Ensure milliseconds are 3 digits
-                                } else {
-                                    // If only minutes are provided, assume seconds and milliseconds are 0
-                                    $seconds = 0;
-                                    $milliseconds = '000';
-                                }
-
-                                // Format the penalty amount as 'MM:SS.sss'
-                                $penaltyTime = sprintf('%02d:%02d.%s', $minutes, $seconds, $milliseconds);
-
-                                // Find the stage ID based on rally_id and stage_number
-                                $stage = Stage::where('rally_id', $rallyId)
-                                    ->where('stage_number', $stageNumber)
-                                    ->first();
-
-                                if ($stage) {
-                                    // Insert the penalty record into the database
-                                    try {
-                                        Penalties::create([
-                                            'crew_id' => $crew->id,
-                                            'stage_id' => $stage->id,
-                                            'penalty_type' => $penalty['reason'],
-                                            'penalty_amount' => $penaltyTime,
-                                        ]);
-
-                                        $this->command->info("Inserted penalty for crew {$data['crewNumber']} at stage {$stageNumber}: {$penalty['reason']}");
-                                    } catch (\Exception $e) {
-                                        $this->command->error("Error inserting penalty for crew {$data['crewNumber']} at stage {$stageNumber}: {$e->getMessage()}");
-                                    }
-                                } else {
-                                    $this->command->error("Stage not found: Stage {$stageNumber} for rally ID {$rallyId}");
-                                }
-                            } else {
-                                $this->command->error("Invalid stage number format in reason: {$penalty['reason']}");
-                            }
-                        }
-                    } else {
-                        $this->command->error("Crew not found: Crew {$data['crewNumber']} - {$data['driver']} / {$data['coDriver']}");
-                    }
-                }
+                Penalties::create([
+                    'crew_id' => $crew->id,
+                    'stage_id' => $stage->id,
+                    'penalty_type' => $penaltyType,
+                    'penalty_amount' => $penaltyAmount,
+                ]);
             }
         }
     }

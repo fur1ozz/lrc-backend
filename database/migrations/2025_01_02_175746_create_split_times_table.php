@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('crew_id');
             $table->unsignedBigInteger('split_id');
-            $table->string('split_time', 12)->nullable();
+            $table->bigInteger('split_time');
             $table->timestamps();
 
             $table->foreign('crew_id')->references('id')->on('crews')->onDelete('cascade');

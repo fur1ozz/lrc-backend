@@ -21,5 +21,10 @@ class Stage extends Model
     {
         return $this->belongsTo(Rally::class);
     }
+
+    public function splits()
+    {
+        return $this->hasMany(Split::class);
+    }
 }
 

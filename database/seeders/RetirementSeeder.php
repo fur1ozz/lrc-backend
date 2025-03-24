@@ -3,61 +3,38 @@
 namespace Database\Seeders;
 
 use App\Models\Crew;
-use App\Models\Participant;
+use App\Models\Rally;
 use App\Models\Retirement;
+use App\Models\Stage;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
 
 class RetirementSeeder extends Seeder
 {
     public function run()
     {
-        $json = Storage::get('retirement_data.json');
-        $retirementData = json_decode($json, true);
+        $retirementReasons = [
+            'Technical', 'Engine', 'Roll over', 'Out of road',
+            'Fuel pump', 'Fire', 'Wheel', 'Axle', 'DNF'
+        ];
 
-        $rallyId = 4;
+        $rallies = Rally::where('season_id', 1)->get();
 
-        foreach ($retirementData as $data) {
-            list($driverFirstName, $driverLastName) = explode(' ', $data['driver'], 2);
-            list($coDriverFirstName, $coDriverLastName) = explode(' ', $data['coDriver'], 2);
+        foreach ($rallies as $rally) {
+            $crews = Crew::where('rally_id', $rally->id)->inRandomOrder()->limit(10)->get();
 
-            $drivers = Participant::where('name', $driverFirstName)
-                ->where('surname', $driverLastName)
-                ->get();
+            $stageCount = Stage::where('rally_id', $rally->id)->count();
 
-            $coDrivers = Participant::where('name', $coDriverFirstName)
-                ->where('surname', $coDriverLastName)
-                ->get();
+            foreach ($crews as $crew) {
+                $randomReason = $retirementReasons[array_rand($retirementReasons)];
+                $randomStage = rand(1, $stageCount);
 
-            if ($drivers->isEmpty() || $coDrivers->isEmpty()) {
-                $this->command->info("Driver or Co-driver not found: {$data['driver']} / {$data['coDriver']}");
-                continue;
-            }
-
-            foreach ($drivers as $driver) {
-                foreach ($coDrivers as $coDriver) {
-                    $crew = Crew::where('rally_id', $rallyId)
-                        ->where('driver_id', $driver->id)
-                        ->where('co_driver_id', $coDriver->id)
-                        ->first();
-
-                    if ($crew) {
-                        try {
-                            Retirement::create([
-                                'crew_id' => $crew->id,
-                                'rally_id' => $rallyId,
-                                'retirement_reason' => $data['retireReason'],
-                                'stage_of_retirement' => (int)$data['finishedStages'] + 1,
-                            ]);
-
-                            $this->command->info("Inserted retirement for crew {$data['crewNumber']} - {$data['retireReason']}");
-                        } catch (\Exception $e) {
-                            $this->command->error("Error inserting retirement for crew {$data['crewNumber']}: {$e->getMessage()}");
-                        }
-                    } else {
-                        $this->command->error("Crew not found: Crew {$data['crewNumber']} - {$data['driver']} / {$data['coDriver']}");
-                    }
-                }
+                Retirement::create([
+                    'crew_id' => $crew->id,
+                    'rally_id' => $rally->id,
+                    'retirement_reason' => $randomReason,
+                    'stage_of_retirement' => $randomStage,
+                ]);
             }
         }
     }

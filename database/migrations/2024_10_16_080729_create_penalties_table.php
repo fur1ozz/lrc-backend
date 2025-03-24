@@ -13,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('crew_id');
             $table->unsignedBigInteger('stage_id');
             $table->string('penalty_type');
-            $table->string('penalty_amount', 12)->nullable();
+            $table->bigInteger('penalty_amount')->nullable();
             $table->timestamps();
 
             $table->foreign('crew_id')->references('id')->on('crews')->onDelete('cascade');

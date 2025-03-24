@@ -8,12 +8,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // User::factory(10)->create();
-
-//        User::factory()->create([
-//            'name' => 'Test User',
-//            'email' => 'test@example.com',
-//        ]);
         $this->call([
             // static data
             SeasonSeeder::class,
@@ -22,14 +16,22 @@ class DatabaseSeeder extends Seeder
             RallySeeder::class,
             RallyGroupClassSeeder::class,
             StageSeeder::class,
+            SplitSeeder::class,
 
             CrewParticipantTeamSeeder::class,
             CrewParticipantTeamHistoricSeeder::class,
-            NewsTableSeeder::class,
+            NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,
 
             // other
             PrevWinnerSeeder::class,
+
+            // Results (2024 season only)
+            RetirementSeeder::class,
+            PenaltySeeder::class,
+            StageResultsSeeder::class,
+            SplitTimesSeeder::class,
+            OverallResultsSeeder::class,
         ]);
     }
 }
