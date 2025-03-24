@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             // Results (2024 season only)
             RetirementSeeder::class,
             PenaltySeeder::class,
+            StageResultsSeeder::class,
         ]);
     }
 }
