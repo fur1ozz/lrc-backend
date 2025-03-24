@@ -43,8 +43,6 @@ Route::get('rally-penalties/{seasonYear}/{rallyName}/', [PenaltiesController::cl
 Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController::class, 'getRetirementsByRally']);
 Route::get('rally-winner-results/{seasonYear}/{rallyName}/', [StageResultsController::class, 'getStageWinnerResultsByRallyAndSeason']);
 
-
-Route::get('/import-crew-data/{rallyId}', [CrewDataController::class, 'importCrewData']);
 Route::get('/calculate/{rallyId}', [OverallResultController::class, 'calculateOverallResults']);
 
 
