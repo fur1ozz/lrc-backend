@@ -114,15 +114,17 @@ class SplitTimeController extends Controller
             }
 
             $fastestSplitTime = $fastestCrewSplitTimes->firstWhere('split_id', $splitTime->split_id);
-            $splitDifference = $fastestSplitTime
-                ? ($splitTime->crew_id === $fastestCrew->id ? null : $this->calculateSplitDifference($splitTime->split_time, $fastestSplitTime->split_time))
+            $splitDifferenceMs = $fastestSplitTime ? ($splitTime->split_time - $fastestSplitTime->split_time) : null;
+            $splitDifferenceFormatted = $splitDifferenceMs !== null
+                ? ($splitTime->crew_id === $fastestCrew->id ? null : lrc_formatMillisecondsAdaptive(abs($splitDifferenceMs), 1))
                 : null;
 
             $response[$splitTime->crew_id]['splits'][] = [
                 'split_number' => $splitTime->split->split_number ?? null,
                 'split_distance' => $splitTime->split->split_distance ?? null,
-                'split_time' => lrc_formatMillisecondsTwoDigits($splitTime->split_time),
-                'split_dif' => $splitDifference,
+                'split_time' => lrc_formatMillisecondsShowMinutesAdaptive($splitTime->split_time, 1),
+                'split_dif' => $splitDifferenceMs !== null ? (($splitDifferenceMs > 0) ? "+{$splitDifferenceFormatted}" : "-{$splitDifferenceFormatted}") : null,
+                'split_dif_ms' => $splitDifferenceMs,
             ];
         }
 
@@ -130,9 +132,11 @@ class SplitTimeController extends Controller
             $stageTime = $data['stage_time_millis'];
             if ($stageTime) {
                 $fastestStageTime = $fastestStageResult->time_taken;
-                $response[$crewId]['stage_time_dif'] = $crewId == $fastestCrew->id
-                    ? null
-                    : $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
+                $stageTimeDiffMs = $stageTime - $fastestStageTime;
+                $stageTimeDiffFormatted = lrc_formatMillisecondsAdaptive(abs($stageTimeDiffMs));
+
+                $response[$crewId]['stage_time_dif'] = $crewId == $fastestCrew->id ? null : (($stageTimeDiffMs > 0) ? "+{$stageTimeDiffFormatted}" : "-{$stageTimeDiffFormatted}");
+                $response[$crewId]['stage_time_dif_ms'] = $crewId == $fastestCrew->id ? null : $stageTimeDiffMs;
             }
         }
 
@@ -143,20 +147,6 @@ class SplitTimeController extends Controller
             'crew_times' => array_values($response),
             'stage_count' => $totalStages,
         ]);
-    }
-
-    private function calculateSplitDifference($crewTime, $fastestTime)
-    {
-        $differenceInMillis = $crewTime - $fastestTime;
-        $formattedDifference = lrc_formatMillisecondsAdaptive(abs($differenceInMillis), 1);
-        return ($differenceInMillis > 0) ? "+{$formattedDifference}" : "-{$formattedDifference}";
-    }
-
-    private function calculateStageTimeDifference($crewTime, $fastestTime)
-    {
-        $differenceInMillis = $crewTime - $fastestTime;
-        $formattedDifference = lrc_formatMillisecondsAdaptive(abs($differenceInMillis));
-        return ($differenceInMillis > 0) ? "+{$formattedDifference}" : "-{$formattedDifference}";
     }
 
     public function index()

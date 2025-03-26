@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\SplitController;
 use App\Http\Controllers\SplitTimeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,7 +10,6 @@ use App\Http\Controllers\StageController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\PrevWinnerController;
-use \App\Http\Controllers\CrewDataController;
 use \App\Http\Controllers\StageResultsController;
 use \App\Http\Controllers\PenaltiesController;
 use \App\Http\Controllers\RetirementController;
