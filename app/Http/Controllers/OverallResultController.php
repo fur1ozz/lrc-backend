@@ -29,8 +29,8 @@ class OverallResultController extends Controller
         $overallResults = OverallResult::where('rally_id', $rally->id)->get();
 
         $sortedResults = $overallResults->sort(function ($a, $b) {
-            $timeA = $this->convertTimeToSeconds($a->total_time);
-            $timeB = $this->convertTimeToSeconds($b->total_time);
+            $timeA = $a->total_time;
+            $timeB = $b->total_time;
             return $timeA <=> $timeB;
         });
 
@@ -53,10 +53,10 @@ class OverallResultController extends Controller
 
                 $penaltySum = 0;
                 foreach ($totalPenalties as $penalty) {
-                    $penaltySum += $this->convertTimeToSeconds($penalty->penalty_amount);
+                    $penaltySum += $penalty->penalty_amount;
                 }
 
-                $formattedTotalPenalties = $penaltySum > 0 ? $this->convertSecondsToTime($penaltySum) : '';
+                $formattedTotalPenalties = $penaltySum > 0 ? lrc_formatMillisecondsTwoDigits($penaltySum) : '';
 
                 return [
                     'crew_id' => $crew->id,
@@ -80,7 +80,7 @@ class OverallResultController extends Controller
                         'id' => $crew->team->id,
                         'name' => $crew->team->team_name,
                     ] : null,
-                    'total_time' => $result->total_time,
+                    'total_time' => lrc_formatMillisecondsTwoDigits($result->total_time),
                     'total_penalty_time' => $formattedTotalPenalties,
                 ];
             })->values(),
@@ -120,8 +120,8 @@ class OverallResultController extends Controller
                 $stageResult = $crew->stageResults()->where('stage_id', $stage->id)->first();
 
                 if ($stageResult) {
-                    $timeTakenInSeconds = $this->convertTimeToSeconds($stageResult->time_taken);
-                    $totalTime += $timeTakenInSeconds;
+                    $timeTaken = $stageResult->time_taken;
+                    $totalTime += $timeTaken;
 
                     $penalties = Penalties::where('crew_id', $crew->id)
                         ->where('stage_id', $stage->id)
@@ -129,7 +129,7 @@ class OverallResultController extends Controller
 
                     $penaltyTime = 0;
                     foreach ($penalties as $penalty) {
-                        $penaltyTime += $this->convertTimeToSeconds($penalty->penalty_amount);
+                        $penaltyTime += $penalty->penalty_amount;
                     }
 
                     $totalPenalties += $penaltyTime;
@@ -144,68 +144,12 @@ class OverallResultController extends Controller
                     'rally_id' => $rallyId,
                 ],
                 [
-                    'total_time' => $this->convertSecondsToTime($totalTimeWithPenalties),
+                    'total_time' => $totalTimeWithPenalties,
                 ]
             );
         }
 
         return response()->json(['message' => 'Overall results calculated and saved successfully.']);
-    }
-
-
-
-    private function convertTimeToSeconds($time)
-    {
-        $parts = explode(':', $time);
-        $seconds = 0;
-
-        // Assuming the format is MM:SS.mm or SS.mm
-        if (count($parts) == 2) {
-            // MM:SS.mm
-            $seconds += $parts[0] * 60; // Convert minutes to seconds
-
-            // Check if milliseconds are present
-            if (strpos($parts[1], '.') !== false) {
-                $subParts = explode('.', $parts[1]);
-                $seconds += (float)$subParts[0]; // Add seconds
-                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
-                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
-            } else {
-                $seconds += (float)$parts[1]; // Add seconds
-            }
-        } elseif (count($parts) == 1) {
-            // Just SS.mm
-            if (strpos($parts[0], '.') !== false) {
-                $subParts = explode('.', $parts[0]);
-                $seconds += (float)$subParts[0]; // Add seconds
-                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
-                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
-            } else {
-                $seconds += (float)$parts[0]; // Just seconds
-            }
-        }
-
-        return $seconds;
-    }
-
-    /**
-     * Convert seconds to "MM:SS.mm" format.
-     */
-    private function convertSecondsToTime($seconds)
-    {
-        $milliseconds = ($seconds - floor($seconds)) * 1000; // Get milliseconds
-        $seconds = floor($seconds);
-        $minutes = floor($seconds / 60);
-        $remainingSeconds = $seconds % 60;
-        $hours = floor($minutes / 60);
-        $remainingMinutes = $minutes % 60;
-
-        // Return formatted time
-        if ($hours > 0) {
-            return sprintf('%02d:%02d:%02d.%02d', $hours, $remainingMinutes, $remainingSeconds, $milliseconds);
-        } else {
-            return sprintf('%02d:%02d.%02d', $remainingMinutes, $remainingSeconds, $milliseconds);
-        }
     }
 
     public function index()
