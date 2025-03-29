@@ -31,7 +31,7 @@ class ParticipantController extends Controller
         return response()->json($participant, 201);
     }
 
-    public function getCrewDetailsBySeasonAndRally($seasonYear, $rallyTag)
+    public function getCrewDetailsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {

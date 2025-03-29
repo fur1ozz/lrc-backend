@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class GalleryImageController extends Controller
 {
-    public function getGalleryImagesByRallyAndSeason($seasonYear, $rallyTag)
+    public function getGalleryImagesBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {

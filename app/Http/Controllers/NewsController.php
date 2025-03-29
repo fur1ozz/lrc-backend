@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
-    public function getNewsBySeasonAndRally($seasonYear, $rallyTag)
+    public function getNewsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         // Check if the rally exists for the given season year and rally tag
         $rally = Rally::whereHas('season', function ($query) use ($seasonYear) {

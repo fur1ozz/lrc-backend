@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 class OverallResultController extends Controller
 {
 
-    public function getOverallResultsByRallyAndSeason($seasonYear, $rallyTag)
+    public function getOverallResultsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {

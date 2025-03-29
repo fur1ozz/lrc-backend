@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class SplitTimeController extends Controller
 {
-    public function getCrewSplitTimesByStageId($seasonYear, $rallyTag, $stageNumber)
+    public function getCrewSplitTimesBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {

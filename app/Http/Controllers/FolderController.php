@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class FolderController extends Controller
 {
-    public function getDocumentsByRallyTagAndSeason($seasonYear, $rallyTag)
+    public function getDocumentsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
