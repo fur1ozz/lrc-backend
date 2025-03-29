@@ -28,18 +28,14 @@ class OverallResultController extends Controller
         $stageCount = Stage::where('rally_id', $rally->id)->count();
         $overallResults = OverallResult::where('rally_id', $rally->id)->get();
 
-        $sortedResults = $overallResults->sort(function ($a, $b) {
-            $timeA = $a->total_time;
-            $timeB = $b->total_time;
-            return $timeA <=> $timeB;
-        });
+        $sortedResults = $overallResults->sortBy('total_time')->values();
 
         $response = [
             'rally_id' => $rally->id,
             'rally_name' => $rally->rally_name,
             'season_year' => $seasonYear,
             'stage_count' => $stageCount,
-            'overall_results' => $sortedResults->map(function ($result) {
+            'overall_results' => $sortedResults->map(function ($result, $index) use ($sortedResults) {
                 $crew = Crew::with('team')->find($result->crew_id);
 
                 if (!$crew) {
@@ -49,14 +45,15 @@ class OverallResultController extends Controller
                 $driver = Participant::find($crew->driver_id);
                 $coDriver = Participant::find($crew->co_driver_id);
 
-                $totalPenalties = Penalties::where('crew_id', $crew->id)->get();
+                $totalPenalties = Penalties::where('crew_id', $crew->id)->sum('penalty_amount');
+                $formattedTotalPenalties = $totalPenalties > 0 ? lrc_formatMillisecondsTwoDigits($totalPenalties) : '';
 
-                $penaltySum = 0;
-                foreach ($totalPenalties as $penalty) {
-                    $penaltySum += $penalty->penalty_amount;
-                }
+                $totalTimeMs = $result->total_time;
+                $firstTimeMs = $sortedResults->first()->total_time ?? null;
+                $previousTimeMs = $index > 0 ? $sortedResults[$index - 1]->total_time : null;
 
-                $formattedTotalPenalties = $penaltySum > 0 ? lrc_formatMillisecondsTwoDigits($penaltySum) : '';
+                $difFromFirst = $index === 0 ? '-' : '+' . lrc_formatMillisecondsAdaptive($totalTimeMs - $firstTimeMs);
+                $difFromPrevious = $index === 0 ? '-' : '+' . lrc_formatMillisecondsAdaptive($totalTimeMs - $previousTimeMs);
 
                 return [
                     'crew_id' => $crew->id,
@@ -82,8 +79,10 @@ class OverallResultController extends Controller
                     ] : null,
                     'total_time' => lrc_formatMillisecondsTwoDigits($result->total_time),
                     'total_penalty_time' => $formattedTotalPenalties,
+                    'dif_from_first' => $difFromFirst,
+                    'dif_from_previous' => $difFromPrevious,
                 ];
-            })->values(),
+            })->filter()->values(),
         ];
 
         return response()->json($response);
