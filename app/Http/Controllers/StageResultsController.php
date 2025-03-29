@@ -36,11 +36,7 @@ class StageResultsController extends Controller
         $results = StageResults::where('stage_id', $stage->id)->get();
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
-        $sortedResults = $results->sort(function ($a, $b) {
-            $timeA = $a->time_taken;
-            $timeB = $b->time_taken;
-            return $timeA <=> $timeB;
-        });
+        $sortedResults = $results->sortBy('time_taken')->values();
 
         $response = [
             'stage_id' => $stage->id,
@@ -49,7 +45,7 @@ class StageResultsController extends Controller
             'stage_start_time' => $stage->start_time,
             'stage_number' => $stage->stage_number,
             'stage_count' => $stageCount,
-            'results' => $sortedResults->map(function ($result) use ($stage, $stageNumber, $rally) {
+            'results' => $sortedResults->map(function ($result, $index) use ($stage, $stageNumber, $rally, $sortedResults) {
                 $crew = Crew::find($result->crew_id);
 
                 if (!$crew) {
@@ -75,6 +71,11 @@ class StageResultsController extends Controller
 
                 $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
 
+                $timeTakenMs = $result->time_taken;
+                $firstTimeMs = $sortedResults->first()->time_taken ?? null;
+
+                $difFromFirst = $index === 0 ? '-' : '+' . lrc_formatMillisecondsAdaptive($timeTakenMs - $firstTimeMs);
+
                 return [
                     'crew_id' => $crew->id,
                     'crew_number' => $crew->crew_number,
@@ -99,10 +100,12 @@ class StageResultsController extends Controller
                         ];
                     }),
                     'time_taken' => lrc_formatMillisecondsTwoDigits($result->time_taken),
+                    'time_dif_from_first' => $difFromFirst,
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
                     'overall_time_until_stage' => $overallResult['total_time'],
                     'overall_penalties_until_stage' => $overallResult['total_penalties'],
                     'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
+                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'],
                 ];
             })->values(),
         ];
@@ -147,6 +150,7 @@ class StageResultsController extends Controller
             'total_time' => lrc_formatMillisecondsTwoDigits($totalTime),
             'total_penalties' => lrc_formatMillisecondsTwoDigits($totalPenalties),
             'total_time_with_penalties' => lrc_formatMillisecondsTwoDigits($totalTimeWithPenalties),
+            'total_time_with_penalties_ms' => $totalTimeWithPenalties,
         ];
     }
     public function getStageWinnerResultsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
