@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GalleryImageController;
 use App\Http\Controllers\SplitTimeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,7 @@ Route::get('stages/{seasonYear}/{rallyName}', [StageController::class, 'getStage
 Route::get('news/{seasonYear}/{rallyTag}', [NewsController::class, 'getNewsBySeasonAndRally']);
 Route::get('participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonAndRally']);
 Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDocumentsByRallyTagAndSeason']);
+Route::get('photos/{seasonYear}/{rallyTag}', [GalleryImageController::class, 'getGalleryImagesByRallyAndSeason']);
 
 //rally results
 Route::get('overall-results/{seasonYear}/{rallyName}/', [OverallResultController::class, 'getOverallResultsByRallyAndSeason']);

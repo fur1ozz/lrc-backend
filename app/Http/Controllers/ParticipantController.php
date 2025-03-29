@@ -88,9 +88,6 @@ class ParticipantController extends Controller
                     'nationality' => $coDriver->nationality,
                     'image' => $coDriver->image,
                 ] : null
-
-
-
             ];
         });
 
