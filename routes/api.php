@@ -30,6 +30,7 @@ Route::get('stages/{seasonYear}/{rallyName}', [StageController::class, 'getStage
 
 //about rally
 Route::get('news/{seasonYear}/{rallyTag}', [NewsController::class, 'getNewsBySeasonYearAndRallyTag']);
+Route::get('news-article/{id}', [NewsController::class, 'getNewsById']);
 Route::get('participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonYearAndRallyTag']);
 Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDocumentsBySeasonYearAndRallyTag']);
 Route::get('photos/{seasonYear}/{rallyTag}', [GalleryImageController::class, 'getGalleryImagesBySeasonYearAndRallyTag']);
