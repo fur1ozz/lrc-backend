@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             StartTimeSeeder::class,
             NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,
+            GalleryImagesSeeder::class,
 
             // other
             PrevWinnerSeeder::class,
