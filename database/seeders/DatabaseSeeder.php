@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
 
             CrewParticipantTeamSeeder::class,
             CrewParticipantTeamHistoricSeeder::class,
+            ExtendedCrewParticipationSeeder::class,
             StartTimeSeeder::class,
             NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,
@@ -34,6 +35,9 @@ class DatabaseSeeder extends Seeder
             StageResultsSeeder::class,
             SplitTimesSeeder::class,
             OverallResultsSeeder::class,
+
+            // user
+            UserSeeder::class,
         ]);
     }
 }
