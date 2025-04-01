@@ -8,6 +8,7 @@ use App\Models\Split;
 use App\Models\SplitTime;
 use App\Models\Stage;
 use App\Models\StageResults;
+use App\Models\StartTime;
 use Illuminate\Http\Request;
 
 class SplitTimeController extends Controller
@@ -78,12 +79,18 @@ class SplitTimeController extends Controller
             ->get()
             ->keyBy('crew_id');
 
+        $startTimes = StartTime::where('stage_id', $stage->id)
+            ->whereIn('crew_id', $splitTimes->pluck('crew_id')->unique())
+            ->get()
+            ->keyBy('crew_id');
+
         foreach ($splitTimes as $splitTime) {
             $crew = $crews[$splitTime->crew_id] ?? null;
             if (!$crew) continue;
 
             if (!isset($response[$splitTime->crew_id])) {
                 $stageResult = $stageResults[$splitTime->crew_id] ?? null;
+                $startTime = $startTimes[$splitTime->crew_id]->start_time ?? null;
 
                 $response[$splitTime->crew_id] = [
                     'crew_id' => $crew->id,
@@ -109,6 +116,7 @@ class SplitTimeController extends Controller
                     ] : null,
                     'stage_time_millis' => $stageResult ? $stageResult->time_taken : 0,
                     'stage_time' => $stageResult ? lrc_formatMillisecondsTwoDigits($stageResult->time_taken) : null,
+                    'start_time' => $startTime ? \Carbon\Carbon::parse($startTime)->format('H:i') : null,
                     'splits' => [],
                 ];
             }
