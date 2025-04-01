@@ -15,7 +15,8 @@ class Crew extends Model
         'co_driver_id',
         'team_id',
         'rally_id',
-        'crew_number',
+        'crew_number_int',
+        'is_historic',
         'car',
         'drive_type',
         'drive_class',
@@ -24,6 +25,11 @@ class Crew extends Model
     protected $casts = [
         'drive_type' => DriveTypeEnum::class,
     ];
+
+    // Accessor for `crew_number`
+    public function getCrewNumberAttribute() {
+        return $this->is_historic ? 'H' . $this->crew_number_int : (string) $this->crew_number_int;
+    }
 
     public function driver()
     {
