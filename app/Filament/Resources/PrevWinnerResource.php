@@ -86,16 +86,7 @@ class PrevWinnerResource extends Resource
                                     ->label('Crew')
                                     ->options(fn (callable $get) => Crew::where('rally_id', $get('rally_id'))
                                         ->with(['driver', 'coDriver'])
-                                        // This orders the crews in ascending order, firstly for default numbers, and then for historic class numbers, like H1
-                                        // Also this fixes issue of sorting incorrectly sorting numbers as string, for example it sorted like this (2, 10, 1), now (10, ..., 2, 1)
-                                        ->orderByRaw('
-                                            CASE
-                                                WHEN crew_number REGEXP "^[0-9]+$" THEN 0
-                                                ELSE 1
-                                            END ASC
-                                        ')
-                                        ->orderByRaw('CAST(REGEXP_REPLACE(crew_number, \'[^0-9]\', \'\') AS UNSIGNED) ASC')
-                                        ->orderByRaw('REGEXP_REPLACE(crew_number, \'[0-9]\', \'\') ASC')
+                                        ->orderByRaw('is_historic ASC, crew_number_int ASC')
                                         ->get()
                                         ->mapWithKeys(fn ($crew) => [
                                             $crew->id => "{$crew->driver?->name} {$crew->driver?->surname} / {$crew->coDriver?->name} {$crew->coDriver?->surname} (Car: {$crew->car}, No: {$crew->crew_number})"
