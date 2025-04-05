@@ -70,7 +70,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-07-07',
                 'location' => 'ee',
                 'road_surface' => 'gravel',
-                'rally_img' => 'rally_images/delf-rally-estonia-2024.png',
+                'rally_img' => 'rally_images/delfi-rally-estonia-2024.png',
             ],
             [
                 'rally_name' => 'Rally Cēsis',
