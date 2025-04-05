@@ -159,6 +159,27 @@ class RallyController extends Controller
         return response()->json($response);
     }
 
+    public function getRallyBySeasonYearAndRallyTag($seasonYear, $rallyTag)
+    {
+        $rally = Rally::where('rally_tag', $rallyTag)
+            ->whereHas('season', function ($query) use ($seasonYear) {
+                $query->where('year', $seasonYear);
+            })->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found'], 404);
+        }
+
+        $response = [
+            'season_year' => $rally->season->year,
+            'rally_name' => $rally->rally_name,
+            'date_from' => $rally->date_from,
+            'date_to' => $rally->date_to,
+            'rally_banner' => $rally->rally_banner,
+        ];
+
+        return response()->json($response);
+    }
 
     public function store(Request $request)
     {
