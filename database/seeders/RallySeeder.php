@@ -4,12 +4,43 @@ namespace Database\Seeders;
 use App\Models\Rally;
 use App\Models\Season;
 use Illuminate\Database\Seeder;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class RallySeeder extends Seeder
 {
     public function run()
     {
+        if (!Storage::disk('public')->exists('rally_images')) {
+            Storage::disk('public')->makeDirectory('rally_images');
+        }
+
+        $rallyImages = [
+            'rally-aluksne-2024.png',
+            'rally-sarma-2024.png',
+            'delfi-rally-estonia-2024.png',
+            'rally-cesis-2024.png',
+            'rally-paide-2024.png',
+            'samsonas-rally-utena-2024.png',
+            'rally-sprint-latvia-2024.png',
+            'rally-aluksne-2025.png',
+            'rally-sarma-2025.png',
+            'rally-sprint-vidzeme-2025.png',
+            'rally-sprint-talsi-2025.png',
+            'rally-louna-eesti-2025.png',
+            'rally-paide-2025.png',
+            'rally-cesis-2025.png',
+            'rally-sprint-latvia-2025.png',
+        ];
+
+        foreach ($rallyImages as $image) {
+            $sourcePath = database_path("seeders/images/rally_images/{$image}");
+            $targetPath = "rally_images/{$image}";
+
+            if (file_exists($sourcePath) && !Storage::disk('public')->exists($targetPath)) {
+                Storage::disk('public')->put($targetPath, file_get_contents($sourcePath));
+            }
+        }
+
         // Seed 2024 season
         $season2024 = Season::where('year', 2024)->firstOrFail();
 
@@ -21,7 +52,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-01-20',
                 'location' => 'lv',
                 'road_surface' => 'snow',
-                'rally_sequence' => 1,
+                'rally_img' => 'rally_images/rally-aluksne-2024.png',
             ],
             [
                 'rally_name' => 'Rally Sarma',
@@ -30,7 +61,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-02-10',
                 'location' => 'lv',
                 'road_surface' => 'snow',
-                'rally_sequence' => 2,
+                'rally_img' => 'rally_images/rally-sarma-2024.png',
             ],
             [
                 'rally_name' => 'Delfi Rally Estonia',
@@ -39,7 +70,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-07-07',
                 'location' => 'ee',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 3,
+                'rally_img' => 'rally_images/delf-rally-estonia-2024.png',
             ],
             [
                 'rally_name' => 'Rally Cēsis',
@@ -48,7 +79,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-08-10',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 4,
+                'rally_img' => 'rally_images/rally-cesis-2024.png',
             ],
             [
                 'rally_name' => 'Rally Paide',
@@ -57,7 +88,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-08-24',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 5,
+                'rally_img' => 'rally_images/rally-paide-2024.png',
             ],
             [
                 'rally_name' => 'Samsonas Rally Utena',
@@ -66,7 +97,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-09-28',
                 'location' => 'lt',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 6,
+                'rally_img' => 'rally_images/samsonas-rally-utena-2024.png',
             ],
             [
                 'rally_name' => 'Rallysprint Latvija',
@@ -75,7 +106,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2024-10-27',
                 'location' => 'lv',
                 'road_surface' => 'tarmac',
-                'rally_sequence' => 7,
+                'rally_img' => 'rally_images/rally-sprint-latvia-2024.png',
             ],
         ];
 
@@ -94,7 +125,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-01-11',
                 'location' => 'lv',
                 'road_surface' => 'snow',
-                'rally_sequence' => 1,
+                'rally_img' => 'rally_images/rally-aluksne-2025.png',
             ],
             [
                 'rally_name' => 'Rallijs Sarma',
@@ -103,7 +134,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-02-08',
                 'location' => 'lv',
                 'road_surface' => 'snow',
-                'rally_sequence' => 2,
+                'rally_img' => 'rally_images/rally-sarma-2025.png',
             ],
             [
                 'rally_name' => 'Rallijsprints Vidzeme',
@@ -112,7 +143,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-04-27',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 3,
+                'rally_img' => 'rally_images/rally-sprint-vidzeme-2025.png',
             ],
             [
                 'rally_name' => 'Rallijsprints Talsi',
@@ -121,7 +152,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-06-29',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 4,
+                'rally_img' => 'rally_images/rally-sprint-talsi-2025.png',
             ],
             [
                 'rally_name' => 'Rally LÕUNA-EESTI',
@@ -130,7 +161,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-07-12',
                 'location' => 'ee',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 5,
+                'rally_img' => 'rally_images/rally-louna-eesti-2025.png',
             ],
             [
                 'rally_name' => 'Rallijs Paide',
@@ -139,7 +170,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-08-23',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 6,
+                'rally_img' => 'rally_images/rally-paide-2025.png',
             ],
             [
                 'rally_name' => 'Rallijs Cēsis',
@@ -148,7 +179,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-09-20',
                 'location' => 'lv',
                 'road_surface' => 'gravel',
-                'rally_sequence' => 7,
+                'rally_img' => 'rally_images/rally-cesis-2025.png',
             ],
             [
                 'rally_name' => 'Rallijsprints Latvija',
@@ -157,7 +188,7 @@ class RallySeeder extends Seeder
                 'date_to' => '2025-10-26',
                 'location' => 'lv',
                 'road_surface' => 'tarmac',
-                'rally_sequence' => 8,
+                'rally_img' => 'rally_images/rally-sprint-latvia-2025.png',
             ],
         ];
 

@@ -20,7 +20,6 @@ class RallyController extends Controller
                 'location' => $rally->location,
                 'road_surface' => $rally->road_surface,
                 'rally_tag' => $rally->rally_tag,
-                'rally_sequence' => $rally->rally_sequence,
                 'season' => $rally->season->year,
             ];
         });
@@ -57,7 +56,7 @@ class RallyController extends Controller
             'location' => $nextRally->location,
             'year' => $season ? $season->year : null,
             'road_surface' => $nextRally->road_surface,
-            'sequence' => $nextRally->rally_sequence,
+            'rally_banner' => $nextRally->rally_banner,
             'all_events_finished' => $allEventsFinished,
         ]);
     }
@@ -88,6 +87,7 @@ class RallyController extends Controller
                     'date_from' => $rally->date_from,
                     'date_to' => $rally->date_to,
                     'road_surface' => $rally->road_surface,
+                    'rally_img' => $rally->rally_img,
                 ];
             }),
         ];
@@ -119,6 +119,7 @@ class RallyController extends Controller
                     'date_from' => $rally->date_from,
                     'date_to' => $rally->date_to,
                     'road_surface' => $rally->road_surface,
+                    'rally_img' => $rally->rally_img,
                 ];
             });
         }
@@ -136,7 +137,6 @@ class RallyController extends Controller
             'road_surface' => 'required|string|max:255',
             'rally_tag' => 'nullable|string|max:255',
             'season_id' => 'required|exists:seasons,id',
-            'rally_sequence' => 'required|integer',
         ]);
 
         $rally = Rally::create($validated);
@@ -152,7 +152,6 @@ class RallyController extends Controller
             'road_surface' => 'required|string|max:255',
             'rally_tag' => 'nullable|string|max:255',
             'season_id' => 'required|exists:seasons,id',
-            'rally_sequence' => 'required|integer',
         ]);
 
         $rally->update($validated);
