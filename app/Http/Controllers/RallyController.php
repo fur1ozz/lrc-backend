@@ -173,6 +173,7 @@ class RallyController extends Controller
         $response = [
             'season_year' => $rally->season->year,
             'rally_name' => $rally->rally_name,
+            'rally_tag' => $rally->rally_tag,
             'date_from' => $rally->date_from,
             'date_to' => $rally->date_to,
             'rally_banner' => $rally->rally_banner,
