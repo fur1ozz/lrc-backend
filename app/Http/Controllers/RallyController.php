@@ -62,6 +62,69 @@ class RallyController extends Controller
         ]);
     }
 
+    public function getRalliesByCurrentYear()
+    {
+        $currentYear = now()->year;
+
+        $season = Season::where('year', $currentYear)->first();
+
+        if (!$season) {
+            return response()->json(['message' => 'Season not found for the current year'], 404);
+        }
+
+        $rallies = Rally::where('season_id', $season->id)
+            ->orderBy('date_from')
+            ->get();
+
+        $response = [
+            'season_id' => $season->id,
+            'season_year' => $season->year,
+            'rallies' => $rallies->map(function ($rally) {
+                return [
+                    'id' => $rally->id,
+                    'rally_name' => $rally->rally_name,
+                    'rally_tag' => $rally->rally_tag,
+                    'location' => $rally->location,
+                    'date_from' => $rally->date_from,
+                    'date_to' => $rally->date_to,
+                    'road_surface' => $rally->road_surface,
+                ];
+            }),
+        ];
+
+        return response()->json($response);
+    }
+
+    public function getAllRalliesGroupedBySeason()
+    {
+        $seasons = Season::orderBy('year', 'asc')->get();
+
+        $groupedRallies = [];
+
+        foreach ($seasons as $season) {
+            $rallies = Rally::where('season_id', $season->id)
+                ->orderBy('date_from')
+                ->get();
+
+            if ($rallies->isEmpty()) {
+                continue;
+            }
+
+            $groupedRallies[$season->year] = $rallies->map(function ($rally) {
+                return [
+                    'id' => $rally->id,
+                    'rally_name' => $rally->rally_name,
+                    'rally_tag' => $rally->rally_tag,
+                    'location' => $rally->location,
+                    'date_from' => $rally->date_from,
+                    'date_to' => $rally->date_to,
+                    'road_surface' => $rally->road_surface,
+                ];
+            });
+        }
+
+        return response()->json($groupedRallies);
+    }
 
     public function store(Request $request)
     {

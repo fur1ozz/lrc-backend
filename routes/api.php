@@ -24,6 +24,8 @@ Route::get('/user', function (Request $request) {
 Route::get('rallies', [RallyController::class, 'index']);
 Route::get('next-event', [RallyController::class, 'getNextEvent']);
 Route::get('previousWinner', [PrevWinnerController::class, 'getLastWinner']);
+Route::get('currentYearRallies', [RallyController::class, 'getRalliesByCurrentYear']);
+Route::get('allRallies', [RallyController::class, 'getAllRalliesGroupedBySeason']);
 
 Route::get('stagesById/{rallyId}', [StageController::class, 'getStagesByRallyId']);
 Route::get('stages/{seasonYear}/{rallyName}', [StageController::class, 'getStagesBySeasonYearAndRallyTag']);
