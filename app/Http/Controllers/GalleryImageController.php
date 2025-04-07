@@ -3,10 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Models\GalleryImage;
+use App\Models\Rally;
+use App\Models\Season;
 use Illuminate\Http\Request;
 
 class GalleryImageController extends Controller
 {
+    public function getGalleryImagesBySeasonYearAndRallyTag($seasonYear, $rallyTag)
+    {
+        $rally = Rally::where('rally_tag', $rallyTag)
+            ->whereHas('season', function ($query) use ($seasonYear) {
+                $query->where('year', $seasonYear);
+            })
+            ->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found for this season'], 404);
+        }
+
+        $galleryImages = $rally->galleryImages()->get();
+
+        $response = [];
+        foreach ($galleryImages as $image) {
+            $response[] = [
+                'image_id' => $image->id,
+                'image_url' => asset('storage/' . $image->img_src),
+                'created_by' => $image->created_by,
+            ];
+        }
+
+        return response()->json($response);
+    }
+
     /**
      * Display a listing of the resource.
      */

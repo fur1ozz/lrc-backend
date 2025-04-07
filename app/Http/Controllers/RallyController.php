@@ -20,7 +20,6 @@ class RallyController extends Controller
                 'location' => $rally->location,
                 'road_surface' => $rally->road_surface,
                 'rally_tag' => $rally->rally_tag,
-                'rally_sequence' => $rally->rally_sequence,
                 'season' => $rally->season->year,
             ];
         });
@@ -57,11 +56,131 @@ class RallyController extends Controller
             'location' => $nextRally->location,
             'year' => $season ? $season->year : null,
             'road_surface' => $nextRally->road_surface,
-            'sequence' => $nextRally->rally_sequence,
+            'rally_banner' => $nextRally->rally_banner,
             'all_events_finished' => $allEventsFinished,
         ]);
     }
 
+    public function getRalliesByCurrentYear()
+    {
+        $currentYear = now()->year;
+
+        $season = Season::where('year', $currentYear)->first();
+
+        if (!$season) {
+            return response()->json(['message' => 'Season not found for the current year'], 404);
+        }
+
+        $rallies = Rally::where('season_id', $season->id)
+            ->orderBy('date_from')
+            ->get();
+
+        $response = [
+            'season_id' => $season->id,
+            'season_year' => $season->year,
+            'rallies' => $rallies->map(function ($rally) {
+                return [
+                    'id' => $rally->id,
+                    'rally_name' => $rally->rally_name,
+                    'rally_tag' => $rally->rally_tag,
+                    'location' => $rally->location,
+                    'date_from' => $rally->date_from,
+                    'date_to' => $rally->date_to,
+                    'road_surface' => $rally->road_surface,
+                    'rally_img' => $rally->rally_img,
+                ];
+            }),
+        ];
+
+        return response()->json($response);
+    }
+
+    public function getAllRalliesGroupedBySeason()
+    {
+        $seasons = Season::orderBy('year', 'desc')->get();
+
+        $groupedRallies = [];
+
+        foreach ($seasons as $season) {
+            $rallies = Rally::where('season_id', $season->id)
+                ->orderBy('date_from')
+                ->get();
+
+            if ($rallies->isEmpty()) {
+                continue;
+            }
+
+            $groupedRallies[$season->year] = $rallies->map(function ($rally) {
+                return [
+                    'id' => $rally->id,
+                    'rally_name' => $rally->rally_name,
+                    'rally_tag' => $rally->rally_tag,
+                    'location' => $rally->location,
+                    'date_from' => $rally->date_from,
+                    'date_to' => $rally->date_to,
+                    'road_surface' => $rally->road_surface,
+                    'rally_img' => $rally->rally_img,
+                ];
+            });
+        }
+
+        return response()->json($groupedRallies);
+    }
+
+    public function getRalliesBySeasonYear($seasonYear)
+    {
+        $season = Season::where('year', $seasonYear)->first();
+
+        if (!$season) {
+            return response()->json(['message' => 'Season not found for this year'], 404);
+        }
+
+        $rallies = Rally::where('season_id', $season->id)
+            ->orderBy('date_from')
+            ->get();
+
+        $response = [
+            'season_id' => $season->id,
+            'season_year' => $season->year,
+            'rallies' => $rallies->map(function ($rally) {
+                return [
+                    'id' => $rally->id,
+                    'rally_name' => $rally->rally_name,
+                    'rally_tag' => $rally->rally_tag,
+                    'location' => $rally->location,
+                    'date_from' => $rally->date_from,
+                    'date_to' => $rally->date_to,
+                    'road_surface' => $rally->road_surface,
+                    'rally_img' => $rally->rally_img,
+                ];
+            }),
+        ];
+
+        return response()->json($response);
+    }
+
+    public function getRallyBySeasonYearAndRallyTag($seasonYear, $rallyTag)
+    {
+        $rally = Rally::where('rally_tag', $rallyTag)
+            ->whereHas('season', function ($query) use ($seasonYear) {
+                $query->where('year', $seasonYear);
+            })->first();
+
+        if (!$rally) {
+            return response()->json(['message' => 'Rally not found'], 404);
+        }
+
+        $response = [
+            'season_year' => $rally->season->year,
+            'rally_name' => $rally->rally_name,
+            'rally_tag' => $rally->rally_tag,
+            'date_from' => $rally->date_from,
+            'date_to' => $rally->date_to,
+            'rally_banner' => $rally->rally_banner,
+        ];
+
+        return response()->json($response);
+    }
 
     public function store(Request $request)
     {
@@ -73,7 +192,6 @@ class RallyController extends Controller
             'road_surface' => 'required|string|max:255',
             'rally_tag' => 'nullable|string|max:255',
             'season_id' => 'required|exists:seasons,id',
-            'rally_sequence' => 'required|integer',
         ]);
 
         $rally = Rally::create($validated);
@@ -89,7 +207,6 @@ class RallyController extends Controller
             'road_surface' => 'required|string|max:255',
             'rally_tag' => 'nullable|string|max:255',
             'season_id' => 'required|exists:seasons,id',
-            'rally_sequence' => 'required|integer',
         ]);
 
         $rally->update($validated);

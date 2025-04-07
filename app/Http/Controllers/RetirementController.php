@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class RetirementController extends Controller
 {
-    public function getRetirementsByRally($seasonYear, $rallyTag)
+    public function getRetirementsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {

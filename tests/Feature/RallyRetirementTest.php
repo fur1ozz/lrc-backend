@@ -40,7 +40,6 @@ class RallyRetirementTest extends TestCase
             'road_surface'=>'gravel',
             'rally_tag'=>'rally-existing',
             'season_id'=>'1',
-            'rally_sequence'=>'1',
         ]);
 
         $response = $this->getJson('/api/rally-retirements/'.$year.'/rally-existing');

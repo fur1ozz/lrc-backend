@@ -18,7 +18,7 @@ class StageController extends Controller
         $stages = Stage::where('rally_id', $rallyId)->get();
         return response()->json($stages);
     }
-    public function getStagesByRallyTagAndSeason($seasonYear, $rallyTag)
+    public function getStagesBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function($query) use ($seasonYear) {

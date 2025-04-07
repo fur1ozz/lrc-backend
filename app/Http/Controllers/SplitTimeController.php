@@ -3,18 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Crew;
-use App\Models\Participant;
 use App\Models\Rally;
 use App\Models\Split;
 use App\Models\SplitTime;
 use App\Models\Stage;
 use App\Models\StageResults;
+use App\Models\StartTime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class SplitTimeController extends Controller
 {
-    public function getCrewSplitTimesByStageId($seasonYear, $rallyTag, $stageNumber)
+    public function getCrewSplitTimesBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -58,7 +57,7 @@ class SplitTimeController extends Controller
 
         // Get the fastest crew based on stage time
         $fastestStageResult = StageResults::where('stage_id', $stage->id)
-            ->orderByRaw("CAST(REPLACE(time_taken, ':', '') AS UNSIGNED) ASC")
+            ->orderBy('time_taken', 'asc')
             ->first();
 
         $fastestCrew = $fastestStageResult ? Crew::find($fastestStageResult->crew_id) : null;
@@ -70,15 +69,28 @@ class SplitTimeController extends Controller
 
         $response = [];
 
-        foreach ($splitTimes as $splitTime) {
-            if (!isset($response[$splitTime->crew_id])) {
-                $crew = Crew::with('team')->find($splitTime->crew_id);
-                $stageResult = StageResults::where('crew_id', $splitTime->crew_id)
-                    ->where('stage_id', $stage->id)
-                    ->first();
+        $crews = Crew::whereIn('id', $splitTimes->pluck('crew_id')->unique())
+            ->with(['team', 'driver', 'coDriver'])
+            ->get()
+            ->keyBy('id');
 
-                $driver = Participant::find($crew->driver_id);
-                $coDriver = Participant::find($crew->co_driver_id);
+        $stageResults = StageResults::whereIn('crew_id', $splitTimes->pluck('crew_id')->unique())
+            ->where('stage_id', $stage->id)
+            ->get()
+            ->keyBy('crew_id');
+
+        $startTimes = StartTime::where('stage_id', $stage->id)
+            ->whereIn('crew_id', $splitTimes->pluck('crew_id')->unique())
+            ->get()
+            ->keyBy('crew_id');
+
+        foreach ($splitTimes as $splitTime) {
+            $crew = $crews[$splitTime->crew_id] ?? null;
+            if (!$crew) continue;
+
+            if (!isset($response[$splitTime->crew_id])) {
+                $stageResult = $stageResults[$splitTime->crew_id] ?? null;
+                $startTime = $startTimes[$splitTime->crew_id]->start_time ?? null;
 
                 $response[$splitTime->crew_id] = [
                     'crew_id' => $crew->id,
@@ -87,202 +99,63 @@ class SplitTimeController extends Controller
                     'drive_type' => $crew->drive_type,
                     'drive_class' => $crew->drive_class,
                     'driver' => [
-                        'id' => $driver->id,
-                        'name' => $driver->name,
-                        'surname' => $driver->surname,
-                        'nationality' => $driver->nationality,
+                        'id' => $crew->driver->id,
+                        'name' => $crew->driver->name,
+                        'surname' => $crew->driver->surname,
+                        'nationality' => $crew->driver->nationality,
                     ],
-                    'co_driver' => $coDriver ? [
-                        'id' => $coDriver->id,
-                        'name' => $coDriver->name,
-                        'surname' => $coDriver->surname,
-                        'nationality' => $coDriver->nationality,
+                    'co_driver' => $crew->coDriver ? [
+                        'id' => $crew->coDriver->id,
+                        'name' => $crew->coDriver->name,
+                        'surname' => $crew->coDriver->surname,
+                        'nationality' => $crew->coDriver->nationality,
                     ] : null,
                     'team' => $crew->team ? [
                         'id' => $crew->team->id,
                         'name' => $crew->team->team_name,
                     ] : null,
-                    'stage_time' => $stageResult ? $stageResult->time_taken : null,
+                    'stage_time_millis' => $stageResult ? $stageResult->time_taken : 0,
+                    'stage_time' => $stageResult ? lrc_formatMillisecondsTwoDigits($stageResult->time_taken) : null,
+                    'start_time' => $startTime ? \Carbon\Carbon::parse($startTime)->format('H:i') : null,
                     'splits' => [],
                 ];
             }
 
             $fastestSplitTime = $fastestCrewSplitTimes->firstWhere('split_id', $splitTime->split_id);
-
-            $splitDifference = $fastestSplitTime
-                ? ($splitTime->crew_id === $fastestCrew->id ? null : $this->calculateSplitDifference($splitTime->split_time, $fastestSplitTime->split_time))
+            $splitDifferenceMs = $fastestSplitTime ? ($splitTime->split_time - $fastestSplitTime->split_time) : null;
+            $splitDifferenceFormatted = $splitDifferenceMs !== null
+                ? ($splitTime->crew_id === $fastestCrew->id ? null : lrc_formatMillisecondsAdaptive(abs($splitDifferenceMs), 1))
                 : null;
 
             $response[$splitTime->crew_id]['splits'][] = [
                 'split_number' => $splitTime->split->split_number ?? null,
                 'split_distance' => $splitTime->split->split_distance ?? null,
-                'split_time' => $splitTime->split_time,
-                'split_dif' => $splitDifference,
+                'split_time' => lrc_formatMillisecondsShowMinutesAdaptive($splitTime->split_time, 1),
+                'split_dif' => $splitDifferenceMs !== null ? (($splitDifferenceMs > 0) ? "+{$splitDifferenceFormatted}" : "-{$splitDifferenceFormatted}") : null,
+                'split_dif_ms' => $splitDifferenceMs,
             ];
         }
 
         foreach ($response as $crewId => $data) {
-            $stageTime = $data['stage_time'];
+            $stageTime = $data['stage_time_millis'];
             if ($stageTime) {
                 $fastestStageTime = $fastestStageResult->time_taken;
-                $response[$crewId]['stage_time_dif'] = $crewId == $fastestCrew->id
-                    ? null
-                    : $this->calculateStageTimeDifference($stageTime, $fastestStageTime);
+                $stageTimeDiffMs = $stageTime - $fastestStageTime;
+                $stageTimeDiffFormatted = lrc_formatMillisecondsAdaptive(abs($stageTimeDiffMs));
+
+                $response[$crewId]['stage_time_dif'] = $crewId == $fastestCrew->id ? null : (($stageTimeDiffMs > 0) ? "+{$stageTimeDiffFormatted}" : "-{$stageTimeDiffFormatted}");
+                $response[$crewId]['stage_time_dif_ms'] = $crewId == $fastestCrew->id ? null : $stageTimeDiffMs;
             }
         }
 
-        $responseData = [
-            'splits' => $splits,
-            'crew_times' => array_values($response),
-        ];
-
-        usort($responseData['crew_times'], function ($a, $b) {
-            if ($a['stage_time'] === null) return 1;
-            if ($b['stage_time'] === null) return -1;
-
-            $aTime = $this->convertStageTimeToSeconds($a['stage_time']);
-            $bTime = $this->convertStageTimeToSeconds($b['stage_time']);
-            return $aTime - $bTime;
-        });
+        usort($response, fn($a, $b) => ($a['stage_time_millis'] ?? PHP_INT_MAX) - ($b['stage_time_millis'] ?? PHP_INT_MAX));
 
         return response()->json([
-            'splits' => $responseData['splits'],
-            'crew_times' => $responseData['crew_times'],
+            'splits' => $splits,
+            'crew_times' => array_values($response),
             'stage_count' => $totalStages,
         ]);
     }
-
-    /**
-     * Helper function to calculate the difference between two times in mm:ss.xx format.
-     *
-     * @param string $crewTime
-     * @param string $fastestTime
-     * @return string
-     */
-    private function calculateSplitDifference($crewTime, $fastestTime)
-    {
-        // Convert both times to seconds for easier comparison
-        $crewTimeSeconds = $this->convertSplitTimeToSeconds($crewTime);
-        $fastestTimeSeconds = $this->convertSplitTimeToSeconds($fastestTime);
-
-        // Calculate the difference in seconds
-        $differenceInSeconds = $crewTimeSeconds - $fastestTimeSeconds;
-
-        // If the difference is greater than or equal to 60 seconds, display in +m:ss.x format
-        if (abs($differenceInSeconds) >= 60) {
-            $minutes = floor(abs($differenceInSeconds) / 60);
-            $seconds = abs($differenceInSeconds) % 60;
-            $milliseconds = round(($differenceInSeconds - floor($differenceInSeconds)) * 10);  // Get the 1-digit milliseconds part
-
-            // Format the difference as +m:ss.x or -m:ss.x
-            $formattedDifference = sprintf("%+d:%02d.%d", $minutes, floor($seconds), $milliseconds);
-        } else {
-            // Otherwise, return the difference in +ss.x format (for differences less than 1 minute)
-            $formattedDifference = number_format($differenceInSeconds, 1);
-
-            // Ensure the difference has a "+" sign for positive numbers
-            if ($differenceInSeconds > 0) {
-                $formattedDifference = "+" . $formattedDifference;
-            }
-        }
-
-        return $formattedDifference;
-    }
-
-    private function calculateStageTimeDifference($crewTime, $fastestTime)
-    {
-        // Convert both times to seconds for easier comparison
-        $crewTimeSeconds = $this->convertStageTimeToSeconds($crewTime);
-        $fastestTimeSeconds = $this->convertStageTimeToSeconds($fastestTime);
-
-        // Calculate the difference in seconds
-        $differenceInSeconds = $crewTimeSeconds - $fastestTimeSeconds;
-
-        // If the difference is greater than or equal to 60 seconds, display in +m:ss.xx format
-        if (abs($differenceInSeconds) >= 60) {
-            $minutes = floor(abs($differenceInSeconds) / 60);
-            $seconds = abs($differenceInSeconds) % 60;
-            $milliseconds = round(($differenceInSeconds - floor($differenceInSeconds)) * 100);  // Get the 2-digit milliseconds part
-
-            // Format the difference as +m:ss.xx or -m:ss.xx
-            $formattedDifference = sprintf("%+d:%02d.%02d", $minutes, floor($seconds), $milliseconds);
-        } else {
-            // Otherwise, return the difference in +ss.xx format (for differences less than 1 minute)
-            $formattedDifference = number_format($differenceInSeconds, 2);  // Format with 2 decimal places for milliseconds
-
-            // Ensure the difference has a "+" sign for positive numbers
-            if ($differenceInSeconds > 0) {
-                $formattedDifference = "+" . $formattedDifference;
-            }
-        }
-
-        return $formattedDifference;
-    }
-
-
-    /**
-     * Helper function to convert time string (mm:ss.milliseconds) to total seconds.
-     *
-     * @param string $time
-     * @return float
-     */
-    private function convertSplitTimeToSeconds($time)
-    {
-        if (!$time) {
-            return PHP_INT_MAX; // If no time exists, push it to the end
-        }
-
-        // Split the time string into minutes and seconds.milliseconds
-        $timeParts = explode(':', $time);
-        $minutes = 0;
-        $seconds = 0;
-        $milliseconds = 0;
-
-        if (count($timeParts) == 2) {
-            // The format is mm:ss.x
-            $minuteSecondParts = explode('.', $timeParts[1]);
-
-            $minutes = (int)$timeParts[0];
-            $seconds = (int)$minuteSecondParts[0];
-
-            // Handle the milliseconds properly as a single digit
-            $milliseconds = (isset($minuteSecondParts[1]) ? (int)$minuteSecondParts[1] : 0);
-
-            // Return total time in seconds, including the milliseconds as a fraction
-            return $minutes * 60 + $seconds + ($milliseconds / 10); // Divide by 10 to get 0-1 decimal
-        }
-
-        return 0; // Default return if the time format is incorrect
-    }
-    private function convertStageTimeToSeconds($time)
-    {
-        if (!$time) {
-            return PHP_INT_MAX; // If no time exists, push it to the end
-        }
-
-        // Split the time string into minutes and seconds.milliseconds
-        $timeParts = explode(':', $time);
-        $minutes = 0;
-        $seconds = 0;
-        $milliseconds = 0;
-
-        if (count($timeParts) == 2) {
-            // The format is mm:ss.xx
-            $minuteSecondParts = explode('.', $timeParts[1]);
-
-            $minutes = (int)$timeParts[0];
-            $seconds = (int)$minuteSecondParts[0];
-
-            // Handle the milliseconds properly as two digits
-            $milliseconds = (isset($minuteSecondParts[1]) ? (int)$minuteSecondParts[1] : 0);
-
-            // Return total time in seconds, including the milliseconds as a fraction
-            return $minutes * 60 + $seconds + ($milliseconds / 100); // Divide by 100 to get 0-1 decimal
-        }
-
-        return 0; // Default return if the time format is incorrect
-    }
-
 
     public function index()
     {

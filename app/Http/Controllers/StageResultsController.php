@@ -14,8 +14,7 @@ use App\Models\Penalties;
 
 class StageResultsController extends Controller
 {
-//    TODO FIX the issue with time convertion (if the stage time miliseconds is odd, then when calculating the overalltime with penalties, it somehow changes the milisecond to even)
-    public function getStageResultsByRallyAndSeason($seasonYear, $rallyTag, $stageNumber)
+    public function getStageResultsBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -37,11 +36,7 @@ class StageResultsController extends Controller
         $results = StageResults::where('stage_id', $stage->id)->get();
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
-        $sortedResults = $results->sort(function ($a, $b) {
-            $timeA = $this->convertTimeToSeconds($a->time_taken);
-            $timeB = $this->convertTimeToSeconds($b->time_taken);
-            return $timeA <=> $timeB;
-        });
+        $sortedResults = $results->sortBy('time_taken')->values();
 
         $response = [
             'stage_id' => $stage->id,
@@ -50,7 +45,7 @@ class StageResultsController extends Controller
             'stage_start_time' => $stage->start_time,
             'stage_number' => $stage->stage_number,
             'stage_count' => $stageCount,
-            'results' => $sortedResults->map(function ($result) use ($stage, $stageNumber, $rally) {
+            'results' => $sortedResults->map(function ($result, $index) use ($stage, $stageNumber, $rally, $sortedResults) {
                 $crew = Crew::find($result->crew_id);
 
                 if (!$crew) {
@@ -70,11 +65,16 @@ class StageResultsController extends Controller
                 $penaltyDetails = $penalties->map(function ($penalty) {
                     return [
                         'penalty_reason' => $penalty->penalty_type,
-                        'penalty_time' => $penalty->penalty_amount,
+                        'penalty_time' => lrc_formatMillisecondsTwoDigits($penalty->penalty_amount),
                     ];
                 });
 
                 $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
+
+                $timeTakenMs = $result->time_taken;
+                $firstTimeMs = $sortedResults->first()->time_taken ?? null;
+
+                $difFromFirst = $index === 0 ? '-' : '+' . lrc_formatMillisecondsAdaptive($timeTakenMs - $firstTimeMs);
 
                 return [
                     'crew_id' => $crew->id,
@@ -99,11 +99,13 @@ class StageResultsController extends Controller
                             'name' => $group->group_name,
                         ];
                     }),
-                    'time_taken' => $result->time_taken,
+                    'time_taken' => lrc_formatMillisecondsTwoDigits($result->time_taken),
+                    'time_dif_from_first' => $difFromFirst,
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
                     'overall_time_until_stage' => $overallResult['total_time'],
                     'overall_penalties_until_stage' => $overallResult['total_penalties'],
                     'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
+                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'],
                 ];
             })->values(),
         ];
@@ -126,8 +128,8 @@ class StageResultsController extends Controller
                 ->first();
 
             if ($stageResult) {
-                $timeTakenInSeconds = $this->convertTimeToSeconds($stageResult->time_taken);
-                $totalTime += $timeTakenInSeconds;
+                $timeTaken = $stageResult->time_taken;
+                $totalTime += $timeTaken;
 
                 $penalties = Penalties::where('crew_id', $crewId)
                     ->where('stage_id', $stage->id)
@@ -135,7 +137,7 @@ class StageResultsController extends Controller
 
                 $penaltyTime = 0;
                 foreach ($penalties as $penalty) {
-                    $penaltyTime += $this->convertTimeToSeconds($penalty->penalty_amount);
+                    $penaltyTime += $penalty->penalty_amount;
                 }
 
                 $totalPenalties += $penaltyTime;
@@ -145,12 +147,13 @@ class StageResultsController extends Controller
         $totalTimeWithPenalties = $totalTime + $totalPenalties;
 
         return [
-            'total_time' => $this->convertSecondsToTime($totalTime),
-            'total_penalties' => $this->convertSecondsToTime($totalPenalties),
-            'total_time_with_penalties' => $this->convertSecondsToTime($totalTimeWithPenalties),
+            'total_time' => lrc_formatMillisecondsTwoDigits($totalTime),
+            'total_penalties' => lrc_formatMillisecondsTwoDigits($totalPenalties),
+            'total_time_with_penalties' => lrc_formatMillisecondsTwoDigits($totalTimeWithPenalties),
+            'total_time_with_penalties_ms' => $totalTimeWithPenalties,
         ];
     }
-    public function getStageWinnerResultsByRallyAndSeason($seasonYear, $rallyTag)
+    public function getStageWinnerResultsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -187,7 +190,7 @@ class StageResultsController extends Controller
                 'team' => $winnerResult->crew->team->team_name,
                 'vehicle' => $winnerResult->crew->car,
                 'drive_type' => $winnerResult->crew->drive_type,
-                'completion_time' => $winnerResult->time_taken,
+                'completion_time' => lrc_formatMillisecondsTwoDigits($winnerResult->time_taken),
                 'average_speed_kmh' => $winnerResult->avg_speed,
             ];
 
@@ -240,59 +243,5 @@ class StageResultsController extends Controller
         ];
 
         return response()->json($response);
-    }
-
-    private function convertTimeToSeconds($time)
-    {
-        $parts = explode(':', $time);
-        $seconds = 0;
-
-        // Assuming the format is MM:SS.mm or SS.mm
-        if (count($parts) == 2) {
-            // MM:SS.mm
-            $seconds += $parts[0] * 60; // Convert minutes to seconds
-
-            // Check if milliseconds are present
-            if (strpos($parts[1], '.') !== false) {
-                $subParts = explode('.', $parts[1]);
-                $seconds += (float)$subParts[0]; // Add seconds
-                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
-                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
-            } else {
-                $seconds += (float)$parts[1]; // Add seconds
-            }
-        } elseif (count($parts) == 1) {
-            // Just SS.mm
-            if (strpos($parts[0], '.') !== false) {
-                $subParts = explode('.', $parts[0]);
-                $seconds += (float)$subParts[0]; // Add seconds
-                $milliseconds = isset($subParts[1]) ? (float)$subParts[1] : 0; // Add milliseconds if present
-                $seconds += $milliseconds / 1000; // Convert milliseconds to seconds
-            } else {
-                $seconds += (float)$parts[0]; // Just seconds
-            }
-        }
-
-        return $seconds;
-    }
-
-    /**
-     * Convert seconds to "MM:SS.mm" format.
-     */
-    private function convertSecondsToTime($seconds)
-    {
-        $milliseconds = ($seconds - floor($seconds)) * 1000; // Get milliseconds
-        $seconds = floor($seconds);
-        $minutes = floor($seconds / 60);
-        $remainingSeconds = $seconds % 60;
-        $hours = floor($minutes / 60);
-        $remainingMinutes = $minutes % 60;
-
-        // Return formatted time
-        if ($hours > 0) {
-            return sprintf('%02d:%02d:%02d.%02d', $hours, $remainingMinutes, $remainingSeconds, $milliseconds);
-        } else {
-            return sprintf('%02d:%02d.%02d', $remainingMinutes, $remainingSeconds, $milliseconds);
-        }
     }
 }

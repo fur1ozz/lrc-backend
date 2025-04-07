@@ -18,7 +18,8 @@ class Rally extends Model
         'road_surface',
         'rally_tag',
         'season_id',
-        'rally_sequence',
+        'rally_img',
+        'rally_banner',
     ];
 
     protected $casts = [
@@ -34,12 +35,6 @@ class Rally extends Model
                 $state = ucwords(strtolower($state));
 
                 $rally->rally_tag = Str::slug($state);
-            }
-
-            // Auto-generate the rally_sequence for the specified season_id
-            if (empty($rally->rally_sequence) && !empty($rally->season_id)) {
-                $rally->rally_sequence = Rally::where('season_id', $rally->season_id)
-                        ->max('rally_sequence') + 1; // Get the next sequence number
             }
         });
     }
@@ -80,5 +75,10 @@ class Rally extends Model
     public function crews()
     {
         return $this->hasMany(Crew::class);
+    }
+
+    public function sponsors()
+    {
+        return $this->belongsToMany(Sponsor::class, 'rally_sponsor');
     }
 }

@@ -14,7 +14,8 @@ class CreateCrewsTable extends Migration
             $table->unsignedBigInteger('co_driver_id');
             $table->unsignedBigInteger('team_id');
             $table->unsignedBigInteger('rally_id');
-            $table->string('crew_number');
+            $table->integer('crew_number_int');
+            $table->boolean('is_historic')->default(false);
             $table->string('car');
             $table->enum('drive_type', ['AWD', 'FWD', 'RWD']);
             $table->string('drive_class');  // e.g., RC2, R5, WRC

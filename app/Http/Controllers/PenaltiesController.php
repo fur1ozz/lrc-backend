@@ -10,7 +10,7 @@ use App\Models\Rally;
 
 class PenaltiesController extends Controller
 {
-    public function getPenaltiesByRally($seasonYear, $rallyTag)
+    public function getPenaltiesBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -56,7 +56,7 @@ class PenaltiesController extends Controller
                     return [
                         'stage_id' => $penalty->stage_id,
                         'penalty_type' => $penalty->penalty_type,
-                        'penalty_amount' => $penalty->penalty_amount,
+                        'penalty_amount' => lrc_formatMillisecondsTwoDigits($penalty->penalty_amount),
                     ];
                 }),
                 'team' => [

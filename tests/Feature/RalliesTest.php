@@ -25,7 +25,6 @@ class RalliesTest extends TestCase
                 'location',
                 'road_surface',
                 'rally_tag',
-                'rally_sequence',
                 'season',
             ]
         ]);

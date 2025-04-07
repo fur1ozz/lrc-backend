@@ -16,7 +16,8 @@ class CreateRalliesTable extends Migration
             $table->enum('road_surface', ['gravel', 'tarmac', 'snow'])->default('gravel');
             $table->string('rally_tag');
             $table->unsignedBigInteger('season_id');
-            $table->integer('rally_sequence');
+            $table->string('rally_img')->nullable();
+            $table->string('rally_banner')->nullable();
             $table->timestamps();
 
             $table->foreign('season_id')->references('id')->on('seasons')->onDelete('cascade');

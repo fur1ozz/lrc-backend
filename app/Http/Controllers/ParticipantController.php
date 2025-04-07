@@ -31,7 +31,7 @@ class ParticipantController extends Controller
         return response()->json($participant, 201);
     }
 
-    public function getCrewDetailsBySeasonAndRally($seasonYear, $rallyTag)
+    public function getCrewDetailsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -44,6 +44,7 @@ class ParticipantController extends Controller
 
         $crews = Crew::with(['team'])
             ->where('rally_id', $rally->id)
+            ->orderByRaw('is_historic ASC, crew_number_int ASC')
             ->get();
 
         $crewWithParticipants = $crews->map(function ($crew) use ($rally) {
@@ -58,6 +59,7 @@ class ParticipantController extends Controller
                 'crew' => [
                     'id' => $crew->id,
                     'crew_number' => $crew->crew_number,
+                    'crew_number_int' => $crew->crew_number_int,
                     'car' => $crew->car,
                     'drive_type' => $crew->drive_type,
                     'drive_class' => $crew->drive_class,
@@ -88,9 +90,6 @@ class ParticipantController extends Controller
                     'nationality' => $coDriver->nationality,
                     'image' => $coDriver->image,
                 ] : null
-
-
-
             ];
         });
 
