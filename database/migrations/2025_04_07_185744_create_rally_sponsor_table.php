@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('rally_id')->constrained()->onDelete('cascade');
             $table->foreignId('sponsor_id')->constrained()->onDelete('cascade');
+            $table->string('type');
             $table->timestamps();
 
             $table->unique(['rally_id', 'sponsor_id']);

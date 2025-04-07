@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GalleryImageController;
 use App\Http\Controllers\SplitTimeController;
+use App\Http\Controllers\SponsorsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,7 @@ Route::get('news-article/{seasonYear}/{rallyTag}/{id}', [NewsController::class, 
 Route::get('participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonYearAndRallyTag']);
 Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDocumentsBySeasonYearAndRallyTag']);
 Route::get('photos/{seasonYear}/{rallyTag}', [GalleryImageController::class, 'getGalleryImagesBySeasonYearAndRallyTag']);
+Route::get('sponsors/{seasonYear}/{rallyTag}', [SponsorsController::class, 'getSponsorsBySeasonYearAndRallyTag']);
 
 //rally results
 Route::get('overall-results/{seasonYear}/{rallyName}/', [OverallResultController::class, 'getOverallResultsBySeasonYearAndRallyTag']);

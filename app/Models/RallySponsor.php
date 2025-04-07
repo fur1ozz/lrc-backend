@@ -8,7 +8,7 @@ class RallySponsor extends Model
 {
     protected $table = 'rally_sponsor';
 
-    protected $fillable = ['rally_id', 'sponsor_id'];
+    protected $fillable = ['rally_id', 'sponsor_id', 'type'];
 
     public function rally()
     {

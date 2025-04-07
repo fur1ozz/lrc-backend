@@ -12,8 +12,6 @@ class GalleryImagesSeeder extends Seeder
 {
     public function run()
     {
-        DB::table('gallery_images')->truncate();
-
         if (!Storage::disk('public')->exists('gallery')) {
             Storage::disk('public')->makeDirectory('gallery');
         }

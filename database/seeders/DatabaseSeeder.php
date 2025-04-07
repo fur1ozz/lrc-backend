@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,
             GalleryImagesSeeder::class,
+            SponsorsSeeder::class,
+            RallySponsorsSeeder::class,
 
             // other
             PrevWinnerSeeder::class,
