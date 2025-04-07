@@ -38,7 +38,7 @@ class SponsorsSeeder extends Seeder
             ],
             [
                 'name' => 'Shell Helix',
-                'file' => 'Shell_Helix3.jpg',
+                'file' => 'Shell_Helix3.png',
                 'url' => 'https://www.shell.com/motorist/oils-lubricants/helix.html',
             ],
             [
