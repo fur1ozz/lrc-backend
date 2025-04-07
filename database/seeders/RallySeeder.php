@@ -44,6 +44,8 @@ class RallySeeder extends Seeder
             'samsonas-rally-utena-2024.png',
             'rally-sprint-latvia-2024.png',
             'rally-aluksne-2025.png',
+            'rally-sarma-2025.png',
+            'rally-sprint-vidzeme-2025.png',
         ];
 
         foreach ($rallyImages as $image) {
@@ -166,7 +168,7 @@ class RallySeeder extends Seeder
                 'location' => 'lv',
                 'road_surface' => 'snow',
                 'rally_img' => 'rally_images/rally-sarma-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-sarma-2025.png',
             ],
             [
                 'rally_name' => 'Rallijsprints Vidzeme',
@@ -176,7 +178,7 @@ class RallySeeder extends Seeder
                 'location' => 'lv',
                 'road_surface' => 'gravel',
                 'rally_img' => 'rally_images/rally-sprint-vidzeme-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-sprint-vidzeme-2025.png',
             ],
             [
                 'rally_name' => 'Rallijsprints Talsi',
