@@ -2,9 +2,134 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\ChampionshipClass;
+use App\Models\ChampionshipPoint;
+use App\Models\Crew;
+use App\Models\CrewClassInvolvement;
+use App\Models\GroupClass;
+use App\Models\OverallResult;
+use App\Models\Participant;
+use App\Models\Rally;
+use App\Models\Season;
 
 class ChampionshipPointController extends Controller
 {
-    //
+    public function getChampionshipPointsBySeasonYearAndClassName($seasonYear, $className)
+    {
+        $season = Season::where('year', $seasonYear)->first();
+
+        if (!$season) {
+            return response()->json(['message' => 'Season not found'], 404);
+        }
+        $seasonId = $season->id;
+
+        $groupClass = GroupClass::where('class_name', $className)->first();
+
+        if (!$groupClass) {
+            return response()->json(['message' => 'Class not found'], 404);
+        }
+        $classId = $groupClass->id;
+
+        $championshipClass = ChampionshipClass::where('season_id', $seasonId)
+            ->where('class_id', $classId)
+            ->first();
+
+        if (!$championshipClass) {
+            return response()->json(['message' => 'Class not found for this season'], 404);
+        }
+
+        $championshipPoints = ChampionshipPoint::where('season_id', $seasonId)
+            ->where('class_id', $classId)
+            ->get();
+
+        $allChampionshipClasses = ChampionshipClass::where('season_id', $seasonId)
+            ->with(['class.group'])
+            ->get()
+            ->groupBy(fn ($champClass) => $champClass->class->group->group_name ?? 'Unknown')
+            ->map(function ($groupedClasses) {
+                return $groupedClasses->map(fn ($champClass) => $champClass->class->class_name)->unique()->values();
+            })
+            ->toArray();
+
+        $seasonRallies = Rally::where('season_id', $seasonId)
+            ->orderBy('date_from')
+            ->get();
+
+        $rallies = $seasonRallies->map(function ($rally) {
+            return [
+                'id' => $rally->id,
+                'name' => $rally->rally_name,
+                'date_from' => $rally->date_from,
+                'date_to' => $rally->date_to,
+            ];
+        })->toArray();
+
+        $response = [
+            'season' => $seasonYear,
+            'championship_classes' => $allChampionshipClasses,
+            'rallies' => $rallies,
+            'championship' => []
+        ];
+
+        $classResults = [];
+
+        foreach ($championshipPoints as $point) {
+            $driverId = $point->driver_id;
+
+            // Check if the driver already exists in the results array for this class
+            if (!isset($classResults[$classId])) {
+                $classResults[$classId] = [
+                    'class' => $className,
+                    'crews' => []
+                ];
+            }
+
+            // Check if the driver is already listed in the results for this class
+            if (!isset($classResults[$classId]['crews'][$driverId])) {
+                $driver = Participant::find($driverId);
+                if (!$driver) {
+                    continue;
+                }
+
+                $classResults[$classId]['crews'][$driverId] = [
+                    'driver' => $driver->name . ' ' . $driver->surname,
+                    'results' => [],
+                    'total_points' => 0
+                ];
+            }
+
+            $crew = Crew::find($point->crew_id);
+            if ($crew) {
+                $rally = Rally::find($crew->rally_id);
+                if ($rally) {
+                    $coDriver = $crew->coDriver->name . ' ' . $crew->coDriver->surname;
+
+                    $classResults[$classId]['crews'][$driverId]['results'][] = [
+                        'rally_id' => $rally->id,
+                        'rally' => $rally->rally_name,
+                        'co_driver' => $coDriver,
+                        'points' => $point->points,
+                        'place' => $point->position,
+                        'power_stage' => $point->power_stage,
+                        'total_points' => $point->points + $point->power_stage,
+                    ];
+
+                    $totalPointsForRally = $point->points + $point->power_stage;
+                    $classResults[$classId]['crews'][$driverId]['total_points'] += $totalPointsForRally;
+                }
+            }
+        }
+
+
+        usort($classResults[$classId]['crews'], function($a, $b) {
+            return $b['total_points'] - $a['total_points'];
+        });
+
+        foreach ($classResults as $classResult) {
+            $response['championship'][] = $classResult;
+        }
+
+        return response()->json($response);
+    }
+
 }

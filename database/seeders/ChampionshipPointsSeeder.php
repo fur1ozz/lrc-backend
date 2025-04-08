@@ -17,6 +17,7 @@ class ChampionshipPointsSeeder extends Seeder
 {
     public function run()
     {
+        // todo doesnt work correctly, seeds wrong class ids
         $seasonId = 1;
 
         $classes = ChampionshipClass::where('season_id', $seasonId)->get();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChampionshipPointController;
 use App\Http\Controllers\GalleryImageController;
 use App\Http\Controllers\SplitTimeController;
 use App\Http\Controllers\SponsorsController;
@@ -49,6 +50,8 @@ Route::get('stage-splits/{seasonYear}/{rallyName}/{stageNumber}', [SplitTimeCont
 Route::get('rally-penalties/{seasonYear}/{rallyName}/', [PenaltiesController::class, 'getPenaltiesBySeasonYearAndRallyTag']);
 Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController::class, 'getRetirementsBySeasonYearAndRallyTag']);
 Route::get('rally-winner-results/{seasonYear}/{rallyName}/', [StageResultsController::class, 'getStageWinnerResultsBySeasonYearAndRallyTag']);
+
+Route::get('/championship/{seasonYear}/{className}', [ChampionshipPointController::class, 'getChampionshipPointsBySeasonYearAndClassName']);
 
 Route::get('/calculate/{rallyId}', [OverallResultController::class, 'calculateOverallResults']);
 
