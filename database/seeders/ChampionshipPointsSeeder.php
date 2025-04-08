@@ -5,48 +5,21 @@ namespace Database\Seeders;
 use App\Models\ChampionshipPoint;
 use App\Models\Crew;
 use App\Models\OverallResult;
-use App\Models\Rally;
 use App\Models\Retirement;
 use App\Models\Stage;
 use App\Models\StageResults;
+use App\Models\Season;
+use App\Models\ChampionshipClass;
+use App\Models\CrewClassInvolvement;
 use Illuminate\Database\Seeder;
 
 class ChampionshipPointsSeeder extends Seeder
 {
     public function run()
     {
-        // Get the rally ID for which you want to calculate points
-        $rallyId = 1; // You can adjust this value, or pass it dynamically
+        $seasonId = 1;
 
-        $rally = Rally::findOrFail($rallyId);
-        $seasonId = $rally->season_id;
-
-        // Get the crews
-        $crews = Crew::where('rally_id', $rallyId)->get();
-
-        // First, handle the retired crews and set their points, power stage, and position to null
-        $retiredCrews = Retirement::where('rally_id', $rallyId)->get();
-
-        foreach ($retiredCrews as $retirement) {
-            ChampionshipPoint::updateOrCreate(
-                [
-                    'season_id' => $seasonId,
-                    'crew_id' => $retirement->crew_id,
-                ],
-                [
-                    'points' => null,
-                    'power_stage' => null,
-                    'position' => null,
-                    'driver_id' => $retirement->crew->driver_id,
-                ]
-            );
-        }
-
-        // Now, process the non-retired crews and assign points based on total_time
-        $remainingCrews = OverallResult::where('rally_id', $rallyId)
-            ->whereNotIn('crew_id', $retiredCrews->pluck('crew_id'))
-            ->orderBy('total_time')
-            ->get();
+        $classes = ChampionshipClass::where('season_id', $seasonId)->get();
 
         $pointsSystem = [
             1 => 30,
@@ -66,58 +39,103 @@ class ChampionshipPointsSeeder extends Seeder
             15 => 1
         ];
 
-        $position = 1;
-        foreach ($remainingCrews as $result) {
-            $points = $pointsSystem[$position] ?? 0;
-
-            ChampionshipPoint::updateOrCreate(
-                [
-                    'season_id' => $seasonId,
-                    'crew_id' => $result->crew_id,
-                ],
-                [
-                    'points' => $points,
-                    'position' => $position,
-                    'power_stage' => null, // Placeholder for now
-                    'driver_id' => $result->crew->driver_id,
-                ]
-            );
-
-            $position++;
-        }
-
-        // Find the last stage based on stage_number
-        $lastStage = Stage::where('rally_id', $rallyId)
-            ->orderByDesc('stage_number')
-            ->first();
-
-        if ($lastStage) {
-            // Get the stage results and sort them by time_taken
-            $stageResults = StageResults::where('stage_id', $lastStage->id)
-                ->orderBy('time_taken')
+        // Loop through each class
+        foreach ($classes as $championshipClass) {
+            // Get all crews involved in the current class
+            $crewsInClass = CrewClassInvolvement::where('class_id', $championshipClass->class_id)
                 ->get();
 
-            // Assign power stage points (top 5)
-            $powerStagePoints = [5, 3, 1];
-            $i = 0;
-            foreach ($stageResults as $stageResult) {
-                if ($i < 3) {
-                    $points = $powerStagePoints[$i];
+            // Process each crew in the class
+            foreach ($crewsInClass as $crewInClass) {
+                $crewId = $crewInClass->crew_id;
+                $crew = Crew::findOrFail($crewId);
+                $seasonId = $championshipClass->season_id;
+
+                // Ensure we have a driver_id before proceeding
+                $driverId = $crew->driver_id;
+
+                // First, handle the retired crews and set their points, power stage, and position to null
+                $retiredCrews = Retirement::where('crew_id', $crewId)->get();
+                if ($retiredCrews->count() > 0) {
+                    ChampionshipPoint::updateOrCreate(
+                        [
+                            'season_id' => $seasonId,
+                            'crew_id' => $crewId,
+                            'class_id' => $championshipClass->class_id, // Add class_id here for uniqueness
+                        ],
+                        [
+                            'points' => null,
+                            'power_stage' => null,
+                            'position' => null,
+                            'driver_id' => $driverId, // Ensure driver_id is always included
+                            'class_id' => $championshipClass->class_id,
+                        ]
+                    );
+                    continue; // Skip further processing for retired crews
+                }
+
+                // Process non-retired crews and assign points based on total_time
+                $overallResults = OverallResult::where('crew_id', $crewId)
+                    ->orderBy('total_time')
+                    ->get();
+
+                // Determine the position and points for the crew based on the overall result
+                $position = 1;
+                foreach ($overallResults as $result) {
+                    $points = $pointsSystem[$position] ?? 0;
 
                     ChampionshipPoint::updateOrCreate(
                         [
                             'season_id' => $seasonId,
-                            'crew_id' => $stageResult->crew_id,
+                            'crew_id' => $crewId,
+                            'class_id' => $championshipClass->class_id, // Add class_id to make each record unique
                         ],
                         [
-                            'power_stage' => $points,
+                            'points' => $points,
+                            'position' => $position,
+                            'power_stage' => null, // Placeholder for now
+                            'driver_id' => $driverId, // Ensure driver_id is always included
+                            'class_id' => $championshipClass->class_id,
                         ]
                     );
+                    $position++;
                 }
-                $i++;
+
+                // Find the last stage based on stage_number for the rally
+                $lastStage = Stage::where('rally_id', $crew->rally_id)
+                    ->orderByDesc('stage_number')
+                    ->first();
+
+                if ($lastStage) {
+                    // Get the stage results and sort them by time_taken
+                    $stageResults = StageResults::where('stage_id', $lastStage->id)
+                        ->orderBy('time_taken')
+                        ->get();
+
+                    // Assign power stage points (top 5)
+                    $powerStagePoints = [5, 3, 1];
+                    $i = 0;
+                    foreach ($stageResults as $stageResult) {
+                        if ($i < 3) {
+                            $points = $powerStagePoints[$i];
+
+                            ChampionshipPoint::updateOrCreate(
+                                [
+                                    'season_id' => $seasonId,
+                                    'crew_id' => $stageResult->crew_id,
+                                    'class_id' => $championshipClass->class_id, // Add class_id here for uniqueness
+                                ],
+                                [
+                                    'power_stage' => $points,
+                                    'driver_id' => $driverId, // Ensure driver_id is always included
+                                    'class_id' => $championshipClass->class_id,
+                                ]
+                            );
+                        }
+                        $i++;
+                    }
+                }
             }
         }
-
-        $this->command->info('Championship points have been calculated and assigned.');
     }
 }
