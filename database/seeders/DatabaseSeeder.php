@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
             SeasonSeeder::class,
             GroupsClassesSeeder::class,
 
+            ChampionshipClassSeeder::class,
+
             RallySeeder::class,
             RallyGroupClassSeeder::class,
             StageSeeder::class,
