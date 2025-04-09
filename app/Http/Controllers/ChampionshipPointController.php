@@ -162,34 +162,52 @@ class ChampionshipPointController extends Controller
         foreach ($rallies as $rally) {
             $crews = Crew::where('rally_id', $rally->id)->get();
 
-            $rallyCrewInvolvements = [];
+            $rallyClassGroups = [];
 
             foreach ($crews as $crew) {
                 $involvements = CrewClassInvolvement::where('crew_id', $crew->id)
                     ->whereIn('class_id', $classIds)
                     ->get();
 
-                $overallResult = OverallResult::where('crew_id', $crew->id)
-                    ->where('rally_id', $rally->id)
-                    ->first();
-
-                $totalTime = $overallResult ? $overallResult->total_time : null;
-
                 if ($involvements->isNotEmpty()) {
-                    $rallyCrewInvolvements[] = [
-                        'crew_id' => $crew->id,
-                        'crew_number' => $crew->crew_number,
-                        'car' => $crew->car,
-                        'class_ids' => $involvements->pluck('class_id')->toArray(),
-                        'total_time' => $totalTime,
-                    ];
+                    $overallResult = OverallResult::where('crew_id', $crew->id)
+                        ->where('rally_id', $rally->id)
+                        ->first();
+
+                    $totalTime = $overallResult ? $overallResult->total_time : null;
+
+                    foreach ($involvements as $involvement) {
+                        $classId = $involvement->class_id;
+                        if (!isset($rallyClassGroups[$classId])) {
+                            $rallyClassGroups[$classId] = [
+                                'class_id' => $classId,
+                                'class_name' => ChampionshipClass::find($classId)->class->class_name,
+                                'crews' => []
+                            ];
+                        }
+
+                        $rallyClassGroups[$classId]['crews'][] = [
+                            'crew_id' => $crew->id,
+                            'crew_number' => $crew->crew_number,
+                            'driver_id' => $crew->driver_id,
+                            'total_time' => $totalTime,
+                        ];
+                    }
                 }
+            }
+
+            ksort($rallyClassGroups);
+
+            foreach ($rallyClassGroups as $classId => &$classGroup) {
+                usort($classGroup['crews'], function ($a, $b) {
+                    return $a['total_time'] <=> $b['total_time'];
+                });
             }
 
             $data[] = [
                 'rally_id' => $rally->id,
                 'rally_name' => $rally->rally_name,
-                'crews' => $rallyCrewInvolvements
+                'class_groups' => array_values($rallyClassGroups)
             ];
         }
 
