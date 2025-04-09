@@ -24,8 +24,8 @@ class DatabaseSeeder extends Seeder
 //            CrewParticipantTeamHistoricSeeder::class,
             RealisticCrewSeeder::class,
             RealisticCrewHistoricSeeder::class,
-
             ExtendedCrewParticipationSeeder::class,
+
             StartTimeSeeder::class,
             NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,
