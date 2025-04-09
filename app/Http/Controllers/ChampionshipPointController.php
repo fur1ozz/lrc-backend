@@ -191,40 +191,24 @@ class ChampionshipPointController extends Controller
                             $rallyClassGroups[$classId] = [
                                 'class_id' => $classId,
                                 'class_name' => ChampionshipClass::find($classId)->class->class_name,
-                                'crews' => [],
-                                'sorted_last_stage_times' => [],
                                 'sorted_existing_total_times' => [],
-                                'retired_crews' => []
+                                'retired_crews' => [],
                             ];
                         }
 
-                        $rallyClassGroups[$classId]['crews'][] = [
+                        $crewData = [
                             'crew_id' => $crew->id,
                             'crew_number' => $crew->crew_number,
                             'driver_id' => $crew->driver_id,
                             'total_time' => $totalTime,
-                        ];
-
-                        $rallyClassGroups[$classId]['sorted_last_stage_times'][] = [
-                            'crew_id' => $crew->id,
-                            'driver_id' => $crew->driver_id,
                             'last_stage_time' => $lastStageTime,
-                            'power_stage' => null
+                            'power_stage' => null,
                         ];
-                        if ($totalTime != null) {
-                            $rallyClassGroups[$classId]['sorted_existing_total_times'][] = [
-                                'crew_id' => $crew->id,
-                                'driver_id' => $crew->driver_id,
-                                'total_time' => $totalTime,
-                            ];
-                        }
 
-                        if ($totalTime == null) {
-                            $rallyClassGroups[$classId]['retired_crews'][] = [
-                                'crew_id' => $crew->id,
-                                'driver_id' => $crew->driver_id,
-                                'total_time' => $totalTime,
-                            ];
+                        if ($totalTime !== null) {
+                            $rallyClassGroups[$classId]['sorted_existing_total_times'][] = $crewData;
+                        } else {
+                            $rallyClassGroups[$classId]['retired_crews'][] = $crewData;
                         }
                     }
                 }
@@ -233,37 +217,36 @@ class ChampionshipPointController extends Controller
             ksort($rallyClassGroups);
 
             foreach ($rallyClassGroups as $classId => &$classGroup) {
-                usort($classGroup['crews'], function ($a, $b) {
-                    return $a['total_time'] <=> $b['total_time'];
-                });
-
-                usort($classGroup['sorted_last_stage_times'], function ($a, $b) {
-                    return $a['last_stage_time'] <=> $b['last_stage_time'];
-                });
-
-                usort($classGroup['sorted_existing_total_times'], function ($a, $b) {
-                    return $a['total_time'] <=> $b['total_time'];
-                });
-
-                $classGroup['sorted_last_stage_times'] = array_map(function ($stageTime, $index) {
-                    // Assign points based on the rank
-                    if ($index == 0) {
-                        $stageTime['power_stage'] = 5;
-                    } elseif ($index == 1) {
-                        $stageTime['power_stage'] = 3;
-                    } elseif ($index == 2) {
-                        $stageTime['power_stage'] = 1;
-                    }
-                    return $stageTime;
-                }, $classGroup['sorted_last_stage_times'], array_keys($classGroup['sorted_last_stage_times']));
+                usort($classGroup['sorted_existing_total_times'], fn($a, $b) => $a['total_time'] <=> $b['total_time']);
 
                 foreach ($classGroup['sorted_existing_total_times'] as $index => &$crew) {
                     $crew['position'] = $index + 1;
                     $crew['points'] = $pointsSystem[$crew['position']] ?? 0;
                 }
-                foreach ($classGroup['retired_crews'] as $index => &$crew) {
+                foreach ($classGroup['retired_crews'] as &$crew) {
                     $crew['position'] = null;
                     $crew['points'] = null;
+                }
+
+                $allCrewsForStage = array_merge(
+                    $classGroup['sorted_existing_total_times'],
+                    $classGroup['retired_crews']
+                );
+
+                usort($allCrewsForStage, fn($a, $b) => $a['last_stage_time'] <=> $b['last_stage_time']);
+
+                $powerStagePoints = [5, 3, 1];
+                foreach ($allCrewsForStage as $i => $psCrew) {
+                    if ($i >= 3 || $psCrew['last_stage_time'] === null) break;
+
+                    foreach (['sorted_existing_total_times', 'retired_crews'] as $group) {
+                        foreach ($classGroup[$group] as &$crew) {
+                            if ($crew['crew_id'] === $psCrew['crew_id']) {
+                                $crew['power_stage'] = $powerStagePoints[$i];
+                                break 2;
+                            }
+                        }
+                    }
                 }
             }
 
