@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Retirement;
 use App\Models\StageResults;
 use Illuminate\Http\Request;
 use App\Models\Rally;
@@ -69,7 +70,15 @@ class StageResultsController extends Controller
                     ];
                 });
 
-                $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
+                $retirement = Retirement::where('crew_id', $crew->id)
+                    ->where('rally_id', $rally->id)
+                    ->first();
+
+                $hasRetiredBeforeOrAtThisStage = $retirement && $retirement->stage_of_retirement <= $stageNumber;
+
+                $overallResult = !$hasRetiredBeforeOrAtThisStage
+                    ? $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id)
+                    : null;
 
                 $timeTakenMs = $result->time_taken;
                 $firstTimeMs = $sortedResults->first()->time_taken ?? null;
@@ -102,10 +111,10 @@ class StageResultsController extends Controller
                     'time_taken' => lrc_formatMillisecondsTwoDigits($result->time_taken),
                     'time_dif_from_first' => $difFromFirst,
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
-                    'overall_time_until_stage' => $overallResult['total_time'],
-                    'overall_penalties_until_stage' => $overallResult['total_penalties'],
-                    'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
-                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'],
+                    'overall_time_until_stage' => $overallResult['total_time'] ?? null,
+                    'overall_penalties_until_stage' => $overallResult['total_penalties'] ?? null,
+                    'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'] ?? null,
+                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'] ?? null,
                 ];
             })->values(),
         ];
