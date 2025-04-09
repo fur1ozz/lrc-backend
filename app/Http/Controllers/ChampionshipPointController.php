@@ -132,4 +132,68 @@ class ChampionshipPointController extends Controller
         return response()->json($response);
     }
 
+    public function getCrewClassPointsBySeason($seasonId)
+    {
+        $pointsSystem = [
+            1 => 30,
+            2 => 24,
+            3 => 21,
+            4 => 19,
+            5 => 17,
+            6 => 15,
+            7 => 13,
+            8 => 11,
+            9 => 9,
+            10 => 7,
+            11 => 5,
+            12 => 4,
+            13 => 3,
+            14 => 2,
+            15 => 1
+        ];
+
+        $classes = ChampionshipClass::where('season_id', $seasonId)->get();
+        $classIds = $classes->pluck('class_id')->toArray();
+
+        $data = [];
+
+        $rallies = Rally::where('season_id', $seasonId)->get();
+
+        foreach ($rallies as $rally) {
+            $crews = Crew::where('rally_id', $rally->id)->get();
+
+            $rallyCrewInvolvements = [];
+
+            foreach ($crews as $crew) {
+                $involvements = CrewClassInvolvement::where('crew_id', $crew->id)
+                    ->whereIn('class_id', $classIds)
+                    ->get();
+
+                $overallResult = OverallResult::where('crew_id', $crew->id)
+                    ->where('rally_id', $rally->id)
+                    ->first();
+
+                $totalTime = $overallResult ? $overallResult->total_time : null;
+
+                if ($involvements->isNotEmpty()) {
+                    $rallyCrewInvolvements[] = [
+                        'crew_id' => $crew->id,
+                        'crew_number' => $crew->crew_number,
+                        'car' => $crew->car,
+                        'class_ids' => $involvements->pluck('class_id')->toArray(),
+                        'total_time' => $totalTime,
+                    ];
+                }
+            }
+
+            $data[] = [
+                'rally_id' => $rally->id,
+                'rally_name' => $rally->rally_name,
+                'crews' => $rallyCrewInvolvements
+            ];
+        }
+
+        return response()->json($data);
+    }
+
 }

@@ -10,16 +10,6 @@ class RealisticCrewSeeder extends Seeder
 {
     public function run()
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
-        DB::table('crews')->truncate();
-        DB::table('participants')->truncate();
-        DB::table('teams')->truncate();
-        DB::table('crew_group_involvements')->truncate();
-        DB::table('crew_class_involvements')->truncate();
-
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
         $faker = Faker::create();
 
         $preferredCountries = [

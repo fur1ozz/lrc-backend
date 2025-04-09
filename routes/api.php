@@ -51,7 +51,9 @@ Route::get('rally-penalties/{seasonYear}/{rallyName}/', [PenaltiesController::cl
 Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController::class, 'getRetirementsBySeasonYearAndRallyTag']);
 Route::get('rally-winner-results/{seasonYear}/{rallyName}/', [StageResultsController::class, 'getStageWinnerResultsBySeasonYearAndRallyTag']);
 
-Route::get('/championship/{seasonYear}/{className}', [ChampionshipPointController::class, 'getChampionshipPointsBySeasonYearAndClassName']);
+Route::get('championship/{seasonYear}/{className}', [ChampionshipPointController::class, 'getChampionshipPointsBySeasonYearAndClassName']);
+Route::get('test-champ/{seasonId}', [ChampionshipPointController::class, 'getCrewClassPointsBySeason']);
+
 
 Route::get('/calculate/{rallyId}', [OverallResultController::class, 'calculateOverallResults']);
 
