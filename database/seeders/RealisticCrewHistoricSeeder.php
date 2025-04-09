@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Faker\Factory as Faker;
 
-class CPTHistoricTestSeeder extends Seeder
+class RealisticCrewHistoricSeeder extends Seeder
 {
     public function run()
     {

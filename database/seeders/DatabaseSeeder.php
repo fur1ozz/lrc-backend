@@ -20,8 +20,11 @@ class DatabaseSeeder extends Seeder
             StageSeeder::class,
             SplitSeeder::class,
 
-            CrewParticipantTeamSeeder::class,
-            CrewParticipantTeamHistoricSeeder::class,
+//            CrewParticipantTeamSeeder::class,
+//            CrewParticipantTeamHistoricSeeder::class,
+            RealisticCrewSeeder::class,
+            RealisticCrewHistoricSeeder::class,
+
             ExtendedCrewParticipationSeeder::class,
             StartTimeSeeder::class,
             NewsSeeder::class,
