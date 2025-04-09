@@ -192,7 +192,9 @@ class ChampionshipPointController extends Controller
                                 'class_id' => $classId,
                                 'class_name' => ChampionshipClass::find($classId)->class->class_name,
                                 'crews' => [],
-                                'sorted_last_stage_times' => []
+                                'sorted_last_stage_times' => [],
+                                'sorted_existing_total_times' => [],
+                                'retired_crews' => []
                             ];
                         }
 
@@ -209,6 +211,21 @@ class ChampionshipPointController extends Controller
                             'last_stage_time' => $lastStageTime,
                             'power_stage' => null
                         ];
+                        if ($totalTime != null) {
+                            $rallyClassGroups[$classId]['sorted_existing_total_times'][] = [
+                                'crew_id' => $crew->id,
+                                'driver_id' => $crew->driver_id,
+                                'total_time' => $totalTime,
+                            ];
+                        }
+
+                        if ($totalTime == null) {
+                            $rallyClassGroups[$classId]['retired_crews'][] = [
+                                'crew_id' => $crew->id,
+                                'driver_id' => $crew->driver_id,
+                                'total_time' => $totalTime,
+                            ];
+                        }
                     }
                 }
             }
@@ -224,6 +241,10 @@ class ChampionshipPointController extends Controller
                     return $a['last_stage_time'] <=> $b['last_stage_time'];
                 });
 
+                usort($classGroup['sorted_existing_total_times'], function ($a, $b) {
+                    return $a['total_time'] <=> $b['total_time'];
+                });
+
                 $classGroup['sorted_last_stage_times'] = array_map(function ($stageTime, $index) {
                     // Assign points based on the rank
                     if ($index == 0) {
@@ -236,13 +257,13 @@ class ChampionshipPointController extends Controller
                     return $stageTime;
                 }, $classGroup['sorted_last_stage_times'], array_keys($classGroup['sorted_last_stage_times']));
 
-                // Now calculate position and points based on total_time
-                foreach ($classGroup['crews'] as $index => &$crew) {
-                    // Determine position based on the sorted order of total_time
+                foreach ($classGroup['sorted_existing_total_times'] as $index => &$crew) {
                     $crew['position'] = $index + 1;
-
-                    // Assign points based on position
                     $crew['points'] = $pointsSystem[$crew['position']] ?? 0;
+                }
+                foreach ($classGroup['retired_crews'] as $index => &$crew) {
+                    $crew['position'] = null;
+                    $crew['points'] = null;
                 }
             }
 
