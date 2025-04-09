@@ -80,6 +80,8 @@ class CPTHistoricTestSeeder extends Seeder
                 ->whereIn('class_id', [23, 24])
                 ->pluck('class_id');
 
+            $availableCoDrivers = $coDrivers;
+
             $crewNumber = 1;
             shuffle($drivers);
 
@@ -128,13 +130,27 @@ class CPTHistoricTestSeeder extends Seeder
                     ];
                 }
 
-                $groupId = DB::table('group_classes')->where('id', $classId)->value('group_id');
-
-                // Co-driver (80% reuse)
+                // Remove the assigned co-driver from the available list
                 if (isset($coDriverMemory[$driverId]) && rand(1, 10) <= 8) {
                     $coDriverId = $coDriverMemory[$driverId];
+
+                    if (in_array($coDriverId, $availableCoDrivers)) {
+                        $availableCoDrivers = array_diff($availableCoDrivers, [$coDriverId]);
+                    } else {
+                        $randomIndex = array_rand($availableCoDrivers);
+                        $coDriverId = $availableCoDrivers[$randomIndex];
+
+                        unset($availableCoDrivers[$randomIndex]);
+
+                        $coDriverMemory[$driverId] = $coDriverId;
+                    }
+
                 } else {
-                    $coDriverId = $faker->randomElement($coDrivers);
+                    $randomIndex = array_rand($availableCoDrivers);
+                    $coDriverId = $availableCoDrivers[$randomIndex];
+
+                    unset($availableCoDrivers[$randomIndex]);
+
                     $coDriverMemory[$driverId] = $coDriverId;
                 }
 
@@ -167,7 +183,7 @@ class CPTHistoricTestSeeder extends Seeder
 
                 DB::table('crew_group_involvements')->insert([
                     'crew_id' => $crewId,
-                    'group_id' => $groupId,
+                    'group_id' => DB::table('group_classes')->where('id', $classId)->value('group_id'),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

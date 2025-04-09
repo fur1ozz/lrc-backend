@@ -102,6 +102,8 @@ class CPTtestSeeder extends Seeder
                 ->whereNotIn('class_id', [23, 24, 25, 16, 17, 18, 22, 26, 27, 28, 29, 30, 31])
                 ->pluck('class_id');
 
+            $availableCoDrivers = $coDrivers;
+
             $crewNumber = 1;
             shuffle($drivers);
 
@@ -150,13 +152,27 @@ class CPTtestSeeder extends Seeder
                     ];
                 }
 
-                $groupId = DB::table('group_classes')->where('id', $classId)->value('group_id');
-
-                // Co-driver (80% reuse)
+                // Remove the assigned co-driver from the available list
                 if (isset($coDriverMemory[$driverId]) && rand(1, 10) <= 8) {
                     $coDriverId = $coDriverMemory[$driverId];
+
+                    if (in_array($coDriverId, $availableCoDrivers)) {
+                        $availableCoDrivers = array_diff($availableCoDrivers, [$coDriverId]);
+                    } else {
+                        $randomIndex = array_rand($availableCoDrivers);
+                        $coDriverId = $availableCoDrivers[$randomIndex];
+
+                        unset($availableCoDrivers[$randomIndex]);
+
+                        $coDriverMemory[$driverId] = $coDriverId;
+                    }
+
                 } else {
-                    $coDriverId = $faker->randomElement($coDrivers);
+                    $randomIndex = array_rand($availableCoDrivers);
+                    $coDriverId = $availableCoDrivers[$randomIndex];
+
+                    unset($availableCoDrivers[$randomIndex]);
+
                     $coDriverMemory[$driverId] = $coDriverId;
                 }
 
@@ -174,7 +190,6 @@ class CPTtestSeeder extends Seeder
                     $teamMemory[$driverId] = $teamId;
                 }
 
-                // Crew creation
                 $crewId = DB::table('crews')->insertGetId([
                     'driver_id' => $driverId,
                     'co_driver_id' => $coDriverId,
@@ -191,7 +206,7 @@ class CPTtestSeeder extends Seeder
 
                 DB::table('crew_group_involvements')->insert([
                     'crew_id' => $crewId,
-                    'group_id' => $groupId,
+                    'group_id' => DB::table('group_classes')->where('id', $classId)->value('group_id'),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
