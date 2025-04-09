@@ -2,25 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\ChampionshipPoint;
-use App\Models\Crew;
-use App\Models\OverallResult;
-use App\Models\Retirement;
-use App\Models\Stage;
-use App\Models\StageResults;
-use App\Models\Season;
-use App\Models\ChampionshipClass;
-use App\Models\CrewClassInvolvement;
 use Illuminate\Database\Seeder;
+use App\Models\{ChampionshipPoint,
+    ChampionshipClass,
+    Rally,
+    Crew,
+    Stage,
+    OverallResult,
+    StageResults,
+    CrewClassInvolvement};
 
 class ChampionshipPointsSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        // todo doesnt work correctly, seeds wrong class ids
         $seasonId = 1;
 
-        $classes = ChampionshipClass::where('season_id', $seasonId)->get();
+        // Truncate the table before seeding
+        ChampionshipPoint::truncate();
 
         $pointsSystem = [
             1 => 30,
@@ -40,100 +39,110 @@ class ChampionshipPointsSeeder extends Seeder
             15 => 1
         ];
 
-        // Loop through each class
-        foreach ($classes as $championshipClass) {
-            // Get all crews involved in the current class
-            $crewsInClass = CrewClassInvolvement::where('class_id', $championshipClass->class_id)
-                ->get();
+        $classes = ChampionshipClass::where('season_id', $seasonId)->get();
+        $classIds = $classes->pluck('class_id')->toArray();
 
-            // Process each crew in the class
-            foreach ($crewsInClass as $crewInClass) {
-                $crewId = $crewInClass->crew_id;
-                $crew = Crew::findOrFail($crewId);
-                $seasonId = $championshipClass->season_id;
+        $rallies = Rally::where('season_id', $seasonId)->get();
 
-                // Ensure we have a driver_id before proceeding
-                $driverId = $crew->driver_id;
+        foreach ($rallies as $rally) {
+            $crews = Crew::where('rally_id', $rally->id)->get();
+            $lastStage = Stage::where('rally_id', $rally->id)->orderBy('stage_number', 'desc')->first();
 
-                // First, handle the retired crews and set their points, power stage, and position to null
-                $retiredCrews = Retirement::where('crew_id', $crewId)->get();
-                if ($retiredCrews->count() > 0) {
-                    ChampionshipPoint::updateOrCreate(
-                        [
-                            'season_id' => $seasonId,
-                            'crew_id' => $crewId,
-                            'class_id' => $championshipClass->class_id, // Add class_id here for uniqueness
-                        ],
-                        [
-                            'points' => null,
-                            'power_stage' => null,
-                            'position' => null,
-                            'driver_id' => $driverId, // Ensure driver_id is always included
-                            'class_id' => $championshipClass->class_id,
-                        ]
-                    );
-                    continue; // Skip further processing for retired crews
-                }
+            $rallyClassGroups = [];
 
-                // Process non-retired crews and assign points based on total_time
-                $overallResults = OverallResult::where('crew_id', $crewId)
-                    ->orderBy('total_time')
+            foreach ($crews as $crew) {
+                $involvements = CrewClassInvolvement::where('crew_id', $crew->id)
+                    ->whereIn('class_id', $classIds)
                     ->get();
 
-                // Determine the position and points for the crew based on the overall result
-                $position = 1;
-                foreach ($overallResults as $result) {
-                    $points = $pointsSystem[$position] ?? 0;
+                if ($involvements->isNotEmpty()) {
+                    $overallResult = OverallResult::where('crew_id', $crew->id)
+                        ->where('rally_id', $rally->id)
+                        ->first();
 
-                    ChampionshipPoint::updateOrCreate(
-                        [
-                            'season_id' => $seasonId,
-                            'crew_id' => $crewId,
-                            'class_id' => $championshipClass->class_id, // Add class_id to make each record unique
-                        ],
-                        [
-                            'points' => $points,
-                            'position' => $position,
-                            'power_stage' => null, // Placeholder for now
-                            'driver_id' => $driverId, // Ensure driver_id is always included
-                            'class_id' => $championshipClass->class_id,
-                        ]
-                    );
-                    $position++;
+                    $totalTime = $overallResult ? $overallResult->total_time : null;
+
+                    $stageResult = StageResults::where('crew_id', $crew->id)
+                        ->where('stage_id', $lastStage->id)
+                        ->first();
+
+                    $lastStageTime = $stageResult ? $stageResult->time_taken : null;
+
+                    foreach ($involvements as $involvement) {
+                        $classId = $involvement->class_id;
+
+                        if (!isset($rallyClassGroups[$classId])) {
+                            $rallyClassGroups[$classId] = [
+                                'sorted_existing_total_times' => [],
+                                'retired_crews' => [],
+                            ];
+                        }
+
+                        $crewData = [
+                            'crew_id' => $crew->id,
+                            'driver_id' => $crew->driver_id,
+                            'total_time' => $totalTime,
+                            'last_stage_time' => $lastStageTime,
+                            'power_stage' => null,
+                        ];
+
+                        if ($totalTime !== null) {
+                            $rallyClassGroups[$classId]['sorted_existing_total_times'][] = $crewData;
+                        } else {
+                            $rallyClassGroups[$classId]['retired_crews'][] = $crewData;
+                        }
+                    }
+                }
+            }
+
+            ksort($rallyClassGroups);
+
+            foreach ($rallyClassGroups as $classId => &$classGroup) {
+                usort($classGroup['sorted_existing_total_times'], fn($a, $b) => $a['total_time'] <=> $b['total_time']);
+
+                foreach ($classGroup['sorted_existing_total_times'] as $index => &$crew) {
+                    $crew['position'] = $index + 1;
+                    $crew['points'] = $pointsSystem[$crew['position']] ?? 0;
                 }
 
-                // Find the last stage based on stage_number for the rally
-                $lastStage = Stage::where('rally_id', $crew->rally_id)
-                    ->orderByDesc('stage_number')
-                    ->first();
+                foreach ($classGroup['retired_crews'] as &$crew) {
+                    $crew['position'] = null;
+                    $crew['points'] = null;
+                }
 
-                if ($lastStage) {
-                    // Get the stage results and sort them by time_taken
-                    $stageResults = StageResults::where('stage_id', $lastStage->id)
-                        ->orderBy('time_taken')
-                        ->get();
+                $allCrewsForStage = array_merge(
+                    $classGroup['sorted_existing_total_times'],
+                    $classGroup['retired_crews']
+                );
 
-                    // Assign power stage points (top 5)
-                    $powerStagePoints = [5, 3, 1];
-                    $i = 0;
-                    foreach ($stageResults as $stageResult) {
-                        if ($i < 3) {
-                            $points = $powerStagePoints[$i];
+                usort($allCrewsForStage, fn($a, $b) => $a['last_stage_time'] <=> $b['last_stage_time']);
 
-                            ChampionshipPoint::updateOrCreate(
-                                [
-                                    'season_id' => $seasonId,
-                                    'crew_id' => $stageResult->crew_id,
-                                    'class_id' => $championshipClass->class_id, // Add class_id here for uniqueness
-                                ],
-                                [
-                                    'power_stage' => $points,
-                                    'driver_id' => $driverId, // Ensure driver_id is always included
-                                    'class_id' => $championshipClass->class_id,
-                                ]
-                            );
+                $powerStagePoints = [5, 3, 1];
+                foreach ($allCrewsForStage as $i => $psCrew) {
+                    if ($i >= 3 || $psCrew['last_stage_time'] === null) break;
+
+                    foreach (['sorted_existing_total_times', 'retired_crews'] as $group) {
+                        foreach ($classGroup[$group] as &$crew) {
+                            if ($crew['crew_id'] === $psCrew['crew_id']) {
+                                $crew['power_stage'] = $powerStagePoints[$i];
+                                break 2;
+                            }
                         }
-                        $i++;
+                    }
+                }
+
+                // Save to DB
+                foreach (['sorted_existing_total_times', 'retired_crews'] as $group) {
+                    foreach ($classGroup[$group] as $crew) {
+                        ChampionshipPoint::updateOrCreate([
+                            'season_id' => $seasonId,
+                            'class_id' => $classId,
+                            'crew_id' => $crew['crew_id'],
+                            'driver_id' => $crew['driver_id'],
+                            'points' => $crew['points'],
+                            'power_stage' => $crew['power_stage'],
+                            'position' => $crew['position'],
+                        ]);
                     }
                 }
             }

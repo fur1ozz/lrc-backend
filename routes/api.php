@@ -52,7 +52,6 @@ Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController:
 Route::get('rally-winner-results/{seasonYear}/{rallyName}/', [StageResultsController::class, 'getStageWinnerResultsBySeasonYearAndRallyTag']);
 
 Route::get('championship/{seasonYear}/{className}', [ChampionshipPointController::class, 'getChampionshipPointsBySeasonYearAndClassName']);
-Route::get('test-champ/{seasonId}', [ChampionshipPointController::class, 'getCrewClassPointsBySeason']);
 
 
 Route::get('/calculate/{rallyId}', [OverallResultController::class, 'calculateOverallResults']);
