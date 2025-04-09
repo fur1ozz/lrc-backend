@@ -89,36 +89,70 @@ class CPTtestSeeder extends Seeder
             ]);
         }
 
+        // Stores info about drivers car, class and drive type, to later determine correct values
+        $driverMemory = [];
+        // Stores info about drivers previous co-drivers, to later determine correct values
         $coDriverMemory = [];
+        $teamMemory = [];
 
         foreach ($rallies as $rallyId) {
             $classes = DB::table('rally_classes')
                 ->where('rally_id', $rallyId)
-                ->whereNotIn('class_id', [23, 24, 25])
+                // 16, 17, 18, 22, 26, 27, 28, 29, 30, 31 aren't used currently
+                ->whereNotIn('class_id', [23, 24, 25, 16, 17, 18, 22, 26, 27, 28, 29, 30, 31])
                 ->pluck('class_id');
 
             $crewNumber = 1;
             shuffle($drivers);
 
-            foreach (array_slice($drivers, 0, 100) as $driverId) {
-                $classId = $classes->random();
-                $className = DB::table('group_classes')->where('id', $classId)->value('class_name');
+            $numCrews = rand(70, 90);
+
+            foreach (array_slice($drivers, 0, $numCrews) as $driverId) {
+                $classId = null;
+                $className = null;
+                $driveType = null;
+                $car = null;
+
+                // 80% chance to reuse previous class/car
+                if (isset($driverMemory[$driverId]) && rand(1, 10) <= 8) {
+                    $classId = $driverMemory[$driverId]['class_id'];
+                    $className = DB::table('group_classes')->where('id', $classId)->value('class_name');
+                    $driveType = $driverMemory[$driverId]['drive_type'];
+                    $car = $driverMemory[$driverId]['car'];
+                } else {
+                    $classId = $classes->random();
+                    $className = DB::table('group_classes')->where('id', $classId)->value('class_name');
+
+                    foreach ($driveTypeMapping as $type => $ids) {
+                        if (in_array($classId, $ids)) {
+                            $driveType = $type;
+                            break;
+                        }
+                    }
+
+                    if (!$driveType) {
+                        continue;
+                    }
+
+                    if ($driveType === '2WD') {
+                        $randomDriveType = $faker->randomElement(['FWD', 'RWD']);
+                        $car = $faker->randomElement($cars[$randomDriveType]);
+                        $driveType = $randomDriveType;
+                    } else {
+                        $car = $faker->randomElement($cars[$driveType]);
+                    }
+
+                    $driverMemory[$driverId] = [
+                        'class_id' => $classId,
+                        'class_name' => $className,
+                        'car' => $car,
+                        'drive_type' => $driveType
+                    ];
+                }
+
                 $groupId = DB::table('group_classes')->where('id', $classId)->value('group_id');
 
-                // Determine drive type
-                $driveType = null;
-                foreach ($driveTypeMapping as $type => $ids) {
-                    if (in_array($classId, $ids)) {
-                        $driveType = $type;
-                        break;
-                    }
-                }
-
-                if (!$driveType) {
-                    continue;
-                }
-
-                // Co-driver assignment (80% chance same as previous rally)
+                // Co-driver (80% reuse)
                 if (isset($coDriverMemory[$driverId]) && rand(1, 10) <= 8) {
                     $coDriverId = $coDriverMemory[$driverId];
                 } else {
@@ -126,26 +160,21 @@ class CPTtestSeeder extends Seeder
                     $coDriverMemory[$driverId] = $coDriverId;
                 }
 
-                // Car assignment
-                if ($driveType === '2WD') {
-                    $randomDriveType = $faker->randomElement(['FWD', 'RWD']);
-                    $car = $faker->randomElement($cars[$randomDriveType]);
-                    $finalDriveType = $randomDriveType;
+                // Team (80% reuse)
+                if (isset($teamMemory[$driverId]) && rand(1, 10) <= 8) {
+                    $teamId = $teamMemory[$driverId];
                 } else {
-                    $car = $faker->randomElement($cars[$driveType]);
-                    $finalDriveType = $driveType;
+                    $teamId = DB::table('teams')->insertGetId([
+                        'team_name' => $faker->company,
+                        'manager_name' => $faker->name,
+                        'manager_contact' => $faker->email,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $teamMemory[$driverId] = $teamId;
                 }
 
-                // Create team
-                $teamId = DB::table('teams')->insertGetId([
-                    'team_name' => $faker->company,
-                    'manager_name' => $faker->name,
-                    'manager_contact' => $faker->email,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Create crew
+                // Crew creation
                 $crewId = DB::table('crews')->insertGetId([
                     'driver_id' => $driverId,
                     'co_driver_id' => $coDriverId,
@@ -154,7 +183,7 @@ class CPTtestSeeder extends Seeder
                     'crew_number_int' => $crewNumber,
                     'is_historic' => false,
                     'car' => $car,
-                    'drive_type' => $finalDriveType,
+                    'drive_type' => $driveType,
                     'drive_class' => $className,
                     'created_at' => now(),
                     'updated_at' => now(),
