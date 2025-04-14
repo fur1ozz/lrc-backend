@@ -73,7 +73,6 @@ class OverallResultController extends Controller
             })
             ->values();
 
-
         $response = [
             'rally_id' => $rally->id,
             'rally_name' => $rally->rally_name,
