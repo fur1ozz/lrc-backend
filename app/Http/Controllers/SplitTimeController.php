@@ -202,7 +202,7 @@ class SplitTimeController extends Controller
             'splits' => $splits,
             'crew_times' => array_values($response),
             'stage_count' => $totalStages,
-            'available_classes' => $rallyClasses,
+            'rally_classes' => $rallyClasses,
         ]);
     }
 

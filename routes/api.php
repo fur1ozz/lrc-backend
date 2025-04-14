@@ -39,6 +39,7 @@ Route::get('stages/{seasonYear}/{rallyName}', [StageController::class, 'getStage
 Route::get('news/{seasonYear}/{rallyTag}', [NewsController::class, 'getNewsBySeasonYearAndRallyTag']);
 Route::get('news-article/{seasonYear}/{rallyTag}/{id}', [NewsController::class, 'getNewsById']);
 Route::get('participants/{seasonYear}/{rallyTag}', [ParticipantController::class, 'getCrewDetailsBySeasonYearAndRallyTag']);
+Route::get('participants/{seasonYear}/{rallyTag}/{classId}', [ParticipantController::class, 'getCrewDetailsBySeasonYearAndRallyTag']);
 Route::get('documents/{seasonYear}/{rallyTag}', [FolderController::class, 'getDocumentsBySeasonYearAndRallyTag']);
 Route::get('photos/{seasonYear}/{rallyTag}', [GalleryImageController::class, 'getGalleryImagesBySeasonYearAndRallyTag']);
 Route::get('sponsors/{seasonYear}/{rallyTag}', [SponsorsController::class, 'getSponsorsBySeasonYearAndRallyTag']);
