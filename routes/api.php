@@ -49,6 +49,7 @@ Route::get('overall-results/{seasonYear}/{rallyName}/{classId}', [OverallResultC
 Route::get('stage-results/{seasonYear}/{rallyName}/{stageNumber}', [StageResultsController::class, 'getStageResultsBySeasonYearRallyTagAndStageNumber']);
 Route::get('stage-results/{seasonYear}/{rallyName}/{stageNumber}/{classId}', [StageResultsController::class, 'getStageResultsBySeasonYearRallyTagAndStageNumber']);
 Route::get('stage-splits/{seasonYear}/{rallyName}/{stageNumber}', [SplitTimeController::class, 'getCrewSplitTimesBySeasonYearRallyTagAndStageNumber']);
+Route::get('stage-splits/{seasonYear}/{rallyName}/{stageNumber}/{classId}', [SplitTimeController::class, 'getCrewSplitTimesBySeasonYearRallyTagAndStageNumber']);
 Route::get('rally-penalties/{seasonYear}/{rallyName}/', [PenaltiesController::class, 'getPenaltiesBySeasonYearAndRallyTag']);
 Route::get('rally-retirements/{seasonYear}/{rallyName}/', [RetirementController::class, 'getRetirementsBySeasonYearAndRallyTag']);
 Route::get('rally-winner-results/{seasonYear}/{rallyName}/', [StageResultsController::class, 'getStageWinnerResultsBySeasonYearAndRallyTag']);

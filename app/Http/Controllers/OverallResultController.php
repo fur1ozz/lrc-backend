@@ -30,8 +30,7 @@ class OverallResultController extends Controller
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
         if ($classId !== 'all') {
-            $classExistsInRally = DB::table('rally_classes')
-                ->where('rally_id', $rally->id)
+            $classExistsInRally = RallyClass::where('rally_id', $rally->id)
                 ->where('class_id', $classId)
                 ->exists();
 
