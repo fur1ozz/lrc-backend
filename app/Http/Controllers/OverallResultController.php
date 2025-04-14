@@ -7,14 +7,16 @@ use App\Models\OverallResult;
 use App\Models\Participant;
 use App\Models\Penalties;
 use App\Models\Rally;
+use App\Models\RallyClass;
 use App\Models\Stage;
 use App\Models\StageResults;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OverallResultController extends Controller
 {
 
-    public function getOverallResultsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
+    public function getOverallResultsBySeasonYearAndRallyTag($seasonYear, $rallyTag, $classId = 'all')
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -26,15 +28,58 @@ class OverallResultController extends Controller
         }
 
         $stageCount = Stage::where('rally_id', $rally->id)->count();
-        $overallResults = OverallResult::where('rally_id', $rally->id)->get();
+
+        if ($classId !== 'all') {
+            $classExistsInRally = DB::table('rally_classes')
+                ->where('rally_id', $rally->id)
+                ->where('class_id', $classId)
+                ->exists();
+
+            if (!$classExistsInRally) {
+                return response()->json(['message' => 'Class not found in this rally'], 404);
+            }
+
+            $crewIds = Crew::where('rally_id', $rally->id)->pluck('id');
+
+            $filteredCrewIds = DB::table('crew_class_involvements')
+                ->whereIn('crew_id', $crewIds)
+                ->where('class_id', $classId)
+                ->pluck('crew_id');
+
+            $overallResults = OverallResult::where('rally_id', $rally->id)
+                ->whereIn('crew_id', $filteredCrewIds)
+                ->get();
+        } else {
+            $overallResults = OverallResult::where('rally_id', $rally->id)->get();
+        }
 
         $sortedResults = $overallResults->sortBy('total_time')->values();
+
+        $rallyClasses = RallyClass::where('rally_id', $rally->id)
+            ->with(['class.group'])
+            ->get()
+            ->groupBy(fn ($rallyClass) => $rallyClass->class->group->id ?? 0)
+            ->map(function ($groupedClasses) {
+                $first = $groupedClasses->first();
+
+                return [
+                    'group_id' => $first->class->group->id ?? null,
+                    'group_name' => $first->class->group->group_name ?? 'Unknown',
+                    'classes' => $groupedClasses->map(fn ($rallyClass) => [
+                        'id' => $rallyClass->class->id,
+                        'name' => $rallyClass->class->class_name,
+                    ])->unique('id')->values(),
+                ];
+            })
+            ->values();
+
 
         $response = [
             'rally_id' => $rally->id,
             'rally_name' => $rally->rally_name,
             'season_year' => $seasonYear,
             'stage_count' => $stageCount,
+            'rally_classes' => $rallyClasses,
             'overall_results' => $sortedResults->map(function ($result, $index) use ($sortedResults) {
                 $crew = Crew::with('team')->find($result->crew_id);
 
