@@ -16,7 +16,7 @@ use App\Models\StageResults;
 
 class ChampionshipPointController extends Controller
 {
-    public function getChampionshipPointsBySeasonYearAndClassName($seasonYear, $className)
+    public function getChampionshipPointsBySeasonYearAndClassName($seasonYear, $classId)
     {
         $season = Season::where('year', $seasonYear)->first();
 
@@ -25,7 +25,7 @@ class ChampionshipPointController extends Controller
         }
         $seasonId = $season->id;
 
-        $groupClass = GroupClass::where('class_name', $className)->first();
+        $groupClass = GroupClass::where('id', $classId)->first();
 
         if (!$groupClass) {
             return response()->json(['message' => 'Class not found'], 404);
@@ -47,11 +47,20 @@ class ChampionshipPointController extends Controller
         $allChampionshipClasses = ChampionshipClass::where('season_id', $seasonId)
             ->with(['class.group'])
             ->get()
-            ->groupBy(fn ($champClass) => $champClass->class->group->group_name ?? 'Unknown')
+            ->groupBy(fn ($champClass) => $champClass->class->group->id ?? 0)
             ->map(function ($groupedClasses) {
-                return $groupedClasses->map(fn ($champClass) => $champClass->class->class_name)->unique()->values();
+                $first = $groupedClasses->first();
+
+                return [
+                    'group_id' => $first->class->group->id ?? null,
+                    'group_name' => $first->class->group->group_name ?? 'Unknown',
+                    'classes' => $groupedClasses->map(fn ($champClass) => [
+                        'id' => $champClass->class->id,
+                        'name' => $champClass->class->class_name,
+                    ])->unique('id')->values(),
+                ];
             })
-            ->toArray();
+            ->values();
 
         $seasonRallies = Rally::where('season_id', $seasonId)
             ->orderBy('date_from')
@@ -81,7 +90,7 @@ class ChampionshipPointController extends Controller
             // Check if the driver already exists in the results array for this class
             if (!isset($classResults[$classId])) {
                 $classResults[$classId] = [
-                    'class' => $className,
+                    'class' => $groupClass->class_name,
                     'crews' => []
                 ];
             }

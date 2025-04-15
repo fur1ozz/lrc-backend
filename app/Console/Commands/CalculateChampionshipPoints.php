@@ -12,6 +12,7 @@ use App\Models\Stage;
 use App\Models\StageResults;
 use Illuminate\Console\Command;
 
+//todo remove this, not used
 class CalculateChampionshipPoints extends Command
 {
     protected $signature = 'calculate:championship-points {rally_id}';
