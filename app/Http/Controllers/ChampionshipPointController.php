@@ -79,7 +79,6 @@ class ChampionshipPointController extends Controller
             'season' => $seasonYear,
             'championship_classes' => $allChampionshipClasses,
             'rallies' => $rallies,
-            'championship' => []
         ];
 
         $classResults = [];
@@ -87,7 +86,6 @@ class ChampionshipPointController extends Controller
         foreach ($championshipPoints as $point) {
             $driverId = $point->driver_id;
 
-            // Check if the driver already exists in the results array for this class
             if (!isset($classResults[$classId])) {
                 $classResults[$classId] = [
                     'class' => $groupClass->class_name,
@@ -95,7 +93,6 @@ class ChampionshipPointController extends Controller
                 ];
             }
 
-            // Check if the driver is already listed in the results for this class
             if (!isset($classResults[$classId]['crews'][$driverId])) {
                 $driver = Participant::find($driverId);
                 if (!$driver) {
@@ -137,9 +134,7 @@ class ChampionshipPointController extends Controller
             return $b['total_points'] - $a['total_points'];
         });
 
-        foreach ($classResults as $classResult) {
-            $response['championship'][] = $classResult;
-        }
+        $response['championship'] = reset($classResults);
 
         return response()->json($response);
     }
