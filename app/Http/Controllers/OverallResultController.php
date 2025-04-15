@@ -27,6 +27,11 @@ class OverallResultController extends Controller
             return response()->json(['message' => 'Rally not found for this season'], 404);
         }
 
+        $availableStageNumbers = Stage::where('rally_id', $rally->id)
+            ->orderBy('stage_number')
+            ->pluck('stage_number')
+            ->toArray();
+
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
         if ($classId !== 'all') {
@@ -77,6 +82,7 @@ class OverallResultController extends Controller
             'rally_name' => $rally->rally_name,
             'season_year' => $seasonYear,
             'stage_count' => $stageCount,
+            'available_stage_numbers' => $availableStageNumbers,
             'rally_classes' => $rallyClasses,
             'overall_results' => $sortedResults->map(function ($result, $index) use ($sortedResults) {
                 $crew = Crew::with('team')->find($result->crew_id);

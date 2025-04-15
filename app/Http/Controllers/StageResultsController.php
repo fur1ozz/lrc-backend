@@ -36,6 +36,11 @@ class StageResultsController extends Controller
             return response()->json(['message' => 'No such stage exists'], 404);
         }
 
+        $availableStageNumbers = Stage::where('rally_id', $rally->id)
+            ->orderBy('stage_number')
+            ->pluck('stage_number')
+            ->toArray();
+
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
         if ($classId !== 'all') {
@@ -88,6 +93,7 @@ class StageResultsController extends Controller
             'stage_start_time' => $stage->start_time,
             'stage_number' => $stage->stage_number,
             'stage_count' => $stageCount,
+            'available_stage_numbers' => $availableStageNumbers,
             'rally_classes' => $rallyClasses,
             'results' => $sortedResults->map(function ($result, $index) use ($stage, $stageNumber, $rally, $sortedResults) {
                 $crew = Crew::find($result->crew_id);

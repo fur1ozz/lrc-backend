@@ -77,7 +77,12 @@ class SplitTimeController extends Controller
             ]);
         }
 
-        $totalStages = Stage::where('rally_id', $rally->id)->count();
+        $availableStageNumbers = Stage::where('rally_id', $rally->id)
+            ->orderBy('stage_number')
+            ->pluck('stage_number')
+            ->toArray();
+
+        $stageCount = Stage::where('rally_id', $rally->id)->count();
 
         $splits = Split::where('stage_id', $stage->id)
             ->select('id', 'split_number', 'split_distance')
@@ -95,8 +100,9 @@ class SplitTimeController extends Controller
             return response()->json([
                 'splits' => $splits->isEmpty() ? [] : $splits,
                 'crew_times' => [],
-                'stage_count' => $totalStages,
-                'available_classes' => $rallyClasses,
+                'stage_count' => $stageCount,
+                'available_stage_numbers' => $availableStageNumbers,
+                'rally_classes' => $rallyClasses,
             ]);
         }
 
@@ -201,7 +207,8 @@ class SplitTimeController extends Controller
         return response()->json([
             'splits' => $splits,
             'crew_times' => array_values($response),
-            'stage_count' => $totalStages,
+            'stage_count' => $stageCount,
+            'available_stage_numbers' => $availableStageNumbers,
             'rally_classes' => $rallyClasses,
         ]);
     }
