@@ -83,15 +83,13 @@ class ChampionshipPointController extends Controller
 
         $classResults = [];
 
+        $classResults[$classId] = [
+            'class' => $groupClass->class_name,
+            'crews' => []
+        ];
+
         foreach ($championshipPoints as $point) {
             $driverId = $point->driver_id;
-
-            if (!isset($classResults[$classId])) {
-                $classResults[$classId] = [
-                    'class' => $groupClass->class_name,
-                    'crews' => []
-                ];
-            }
 
             if (!isset($classResults[$classId]['crews'][$driverId])) {
                 $driver = Participant::find($driverId);
@@ -128,7 +126,6 @@ class ChampionshipPointController extends Controller
                 }
             }
         }
-
 
         usort($classResults[$classId]['crews'], function($a, $b) {
             return $b['total_points'] - $a['total_points'];
