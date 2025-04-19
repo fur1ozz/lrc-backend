@@ -251,6 +251,9 @@ class RallyResource extends Resource
                 RelationManagers\StagesRelationManager::class,
                 RelationManagers\FoldersRelationManager::class,
             ]),
+            RelationGroup::make('Sponsors and Classes',[
+                RelationManagers\RallySponsorsRelationManager::class,
+            ]),
             RelationGroup::make('Crews', [
                 //
             ]),
