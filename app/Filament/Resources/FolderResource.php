@@ -71,7 +71,8 @@ class FolderResource extends Resource
                         TextInput::make('title')
                             ->required()
                             ->placeholder('Enter the folder title')
-                            ->helperText('Provide a clear title for the folder. Recommended format - Latvian / English '),
+                            ->helperText('Provide a clear title for the folder. Recommended format - Latvian / English ')
+                            ->maxLength(255),
 
                         Select::make('season_id')
                             ->label('Season')
