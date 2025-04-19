@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Filament\Resources\RallyResource\RelationManagers;
 
+use App\Models\Sponsor;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -36,7 +38,11 @@ class RallySponsorsRelationManager extends RelationManager
             ->columns([
                 ImageColumn::make('image')->height(20)->alignRight(),
                 TextColumn::make('name')->weight(FontWeight::SemiBold)->sortable()->searchable(),
-                TextColumn::make('type')->weight(FontWeight::SemiBold)->searchable(),
+                TextColumn::make('type')
+                    ->searchable()
+                    ->grow()
+                    ->label('Sponsorship Type')
+                    ->color(Color::Orange),
             ])
             ->striped()
             ->defaultSort('name')
@@ -45,26 +51,38 @@ class RallySponsorsRelationManager extends RelationManager
                 AttachAction::make()
                     ->form([
                         Forms\Components\Select::make('sponsor_id')
-                        ->label('Select Sponsor')
-                            ->options(\App\Models\Sponsor::all()->pluck('name', 'id'))
+                            ->label('Select Sponsor')
+                            ->options(function ($state) {
+                                $attachedSponsors = $this->ownerRecord->rallySponsors->pluck('id');
+                                return Sponsor::whereNotIn('id', $attachedSponsors)->pluck('name', 'id');
+                            })
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->helperText('Only sponsors not yet added to this rally are listed.'),
                         Forms\Components\TextInput::make('type')
-                        ->label('Sponsorship Type')
+                            ->label('Sponsorship Type')
                             ->required()
                             ->placeholder('Tire supplier')
                             ->maxLength(255),
                     ])
                     ->action(function ($data) {
-                        $rally = $this->record;
+                        $rally = $this->ownerRecord;
                         $rally->rallySponsors()->attach($data['sponsor_id'], ['type' => $data['type']]);
                     })
-
+                    ->label('Add Sponsor')
+                    ->color('primary')
+                    ->modalHeading('Add a Sponsor to This Rally')
+                    ->modalSubmitActionLabel('Add'),
             ])
             ->actions([
                 EditAction::make()
                     ->color(Color::Sky),
-                DetachAction::make(),
+                DetachAction::make()
+                    ->label('Remove Sponsor'),
+            ])
+            ->bulkActions([
+                Tables\Actions\DetachBulkAction::make()
+                    ->label('Remove Selected Sponsors'),
             ]);
     }
 }
