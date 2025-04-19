@@ -49,7 +49,7 @@ class SponsorResource extends Resource
                                     ->url()
                                     ->maxLength(255)
                                     ->required()
-                                    ->placeholder('http://redbull.com'),
+                                    ->placeholder('https://redbull.com'),
                             ]),
                     ]),
 
