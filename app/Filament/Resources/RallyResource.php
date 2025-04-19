@@ -76,6 +76,7 @@ class RallyResource extends Resource
                                     })
                                     ->helperText('Only "Rallysprint" or "Rally" are allowed.')
                                     ->placeholder('Rally Latvia / Rallysprint Latvia')
+                                    ->maxLength(255)
                                     ->required(),
 
                                 TextInput::make('rally_tag')
@@ -152,7 +153,7 @@ class RallyResource extends Resource
                     ->columns(2),
 
                 Section::make('Rally Media')
-                    ->description('Upload a preview image and banner for the rally display.')
+                    ->description('Provide a rally preview image and banner for the calendar and event pages.')
                     ->icon('heroicon-o-photo')
                     ->schema([
                         FileUpload::make('rally_img')
@@ -181,7 +182,7 @@ class RallyResource extends Resource
                             ->imageResizeTargetHeight(235)
                     ])
                     ->collapsible()
-                    ->collapsed()
+                    ->collapsed(fn (Get $get) => filled($get('id')))
                     ->columns(2),
             ]);
     }
