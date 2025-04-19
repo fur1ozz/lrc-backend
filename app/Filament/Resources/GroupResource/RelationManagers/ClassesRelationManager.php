@@ -22,7 +22,9 @@ class ClassesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                TextInput::make('class_name')->required(),
+                TextInput::make('class_name')
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 

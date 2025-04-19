@@ -33,6 +33,7 @@ class GroupResource extends Resource
             ->schema([
                 TextInput::make('group_name')
                     ->required()
+                    ->maxLength(255)
                     ->afterStateUpdated(fn (callable $set, $state) => $set('group_name', strtoupper($state))),
             ]);
     }
