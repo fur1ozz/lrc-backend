@@ -34,7 +34,8 @@ class NewsRelationManager extends RelationManager
                         Section::make()
                             ->schema([
                                 Forms\Components\TextInput::make('title')
-                                    ->required(),
+                                    ->required()
+                                    ->maxLength(255),
 
                                 Forms\Components\Textarea::make('paragraph')
                                     ->autosize()
