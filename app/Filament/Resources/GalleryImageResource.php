@@ -95,7 +95,8 @@ class GalleryImageResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('created_by')
                                     ->label('Created By')
-                                    ->helperText('You can add the creator of these images.'),
+                                    ->helperText('You can add the creator of these images.')
+                                    ->maxLength(255),
                             ])
                     ])
             ]);
