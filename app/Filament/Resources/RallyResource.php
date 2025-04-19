@@ -10,6 +10,7 @@ use App\Models\Season;
 use Carbon\Carbon;
 use Closure;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -56,7 +57,8 @@ class RallyResource extends Resource
     {
         return $form
             ->schema([
-                Section::make()
+                Section::make('Rally Info')
+                    ->icon('heroicon-o-information-circle')
                     ->schema([
                         Grid::make(['default' => 1, 'lg' => 2])
                             ->schema([
@@ -147,7 +149,40 @@ class RallyResource extends Resource
                             ->placeholder('Select the Season')
                             ->required(),
                     ])
-                    ->columns(2)
+                    ->columns(2),
+
+                Section::make('Rally Media')
+                    ->description('Upload a preview image and banner for the rally display.')
+                    ->icon('heroicon-o-photo')
+                    ->schema([
+                        FileUpload::make('rally_img')
+                            ->label('Rally Image')
+                            ->helperText('This image will appear on the calendar as a quick preview of the rally.')                            ->image()
+                            ->directory('rally_images')
+                            ->required()
+                            ->openable()
+                            ->downloadable()
+                            ->uploadingMessage('Uploading image...')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+
+                        FileUpload::make('rally_banner')
+                            ->label('Rally Banner')
+                            ->image()
+                            ->directory('rally_banners')
+                            ->openable()
+                            ->downloadable()
+                            ->uploadingMessage('Uploading image...')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+                            ->imageResizeMode('cover')
+                            ->imageCropAspectRatio('983:235')
+                            ->imageResizeTargetWidth(983)
+                            ->imageResizeTargetHeight(235)
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columns(2),
             ]);
     }
 
