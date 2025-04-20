@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RallyResource\RelationManagers;
 
 use App\Models\Sponsor;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,6 +16,7 @@ use Filament\Tables\Actions\DetachAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Illuminate\Support\Collection;
 
 class RallySponsorsRelationManager extends RelationManager
 {
@@ -68,7 +70,13 @@ class RallySponsorsRelationManager extends RelationManager
                     ])
                     ->action(function ($data) {
                         $rally = $this->ownerRecord;
+                        $sponsor = Sponsor::find($data['sponsor_id']);
                         $rally->rallySponsors()->attach($data['sponsor_id'], ['type' => $data['type']]);
+
+                        Notification::make()
+                            ->title("Sponsor <strong>\"{$sponsor->name}\"</strong> Added")
+                            ->success()
+                            ->send();
                     })
                     ->label('Add Sponsor')
                     ->color('primary')
@@ -79,11 +87,31 @@ class RallySponsorsRelationManager extends RelationManager
                 EditAction::make()
                     ->color(Color::Sky),
                 DetachAction::make()
-                    ->label('Remove Sponsor'),
+                    ->label('Remove Sponsor')
+                    ->action(function ($record, $livewire) {
+                        $sponsor = $record->name;
+                        $livewire->getOwnerRecord()->rallySponsors()->detach($record->id);
+
+                        Notification::make()
+                            ->title("Sponsor <strong>\"{$sponsor}\"</strong> Removed")
+                            ->warning()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\DetachBulkAction::make()
-                    ->label('Remove Selected Sponsors'),
+                    ->label('Remove Selected Sponsors')
+                    ->action(function (Collection $records, RelationManager $livewire) {
+                        $count = $records->count();
+                        foreach ($records as $record) {
+                            $livewire->getOwnerRecord()->rallySponsors()->detach($record->id);
+                        }
+
+                        Notification::make()
+                            ->title("{$count} Sponsors Removed")
+                            ->warning()
+                            ->send();
+                    }),
             ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\GroupClass;
 use App\Models\RallyClass;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
@@ -76,13 +77,20 @@ class RallyClassesRelationManager extends RelationManager
                     ])
                     ->action(function (array $data, RelationManager $livewire) {
                         $rallyId = $livewire->getOwnerRecord()->id;
+                        $addedCount = 0;
 
                         foreach ($data['class_id'] as $classId) {
+                            $addedCount++;
                             RallyClass::create([
                                 'rally_id' => $rallyId,
                                 'class_id' => $classId,
                             ]);
                         }
+
+                        Notification::make()
+                            ->title("{$addedCount} Class" . ($addedCount > 1 ? 'es' : '') . ' Added')
+                            ->success()
+                            ->send();
                     })
                     ->label('Add Classes')
                     ->color('primary')
@@ -96,17 +104,30 @@ class RallyClassesRelationManager extends RelationManager
                         RallyClass::where('rally_id', $livewire->getOwnerRecord()->id)
                             ->where('class_id', $record->id)
                             ->first()?->delete();
+
+                        Notification::make()
+                            ->title('Class Removed')
+                            ->success()
+                            ->send();
                     }),
             ])
             ->bulkActions([
                 Tables\Actions\DetachBulkAction::make()
                     ->label('Remove Selected')
                     ->action(function (Collection $records, RelationManager $livewire) {
+                        $removedCount = 0;
+
                         foreach ($records as $record) {
+                            $removedCount++;
                             RallyClass::where('rally_id', $livewire->getOwnerRecord()->id)
                                 ->where('class_id', $record->id)
                                 ->first()?->delete();
                         }
+
+                        Notification::make()
+                            ->title("{$removedCount} Class" . ($removedCount > 1 ? 'es' : '') . ' Removed')
+                            ->success()
+                            ->send();
                     }),
             ]);
     }
