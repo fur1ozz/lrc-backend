@@ -47,7 +47,7 @@ class PenaltiesRelationManager extends RelationManager
                 Forms\Components\TextInput::make('penalty_amount')
                     ->label('Penalty Time (min:sec.ms)')
                     ->placeholder('e.g. 1:23.45')
-                    ->helperText('Enter time in format: minutes:seconds.milliseconds')
+                    ->helperText('Enter time in format: min:sec.ms (e.g. 2:05.34)')
                     ->required()
                     ->mask('9:99.99')
                     ->suffix('min:sec.ms')
@@ -72,6 +72,13 @@ class PenaltiesRelationManager extends RelationManager
                         $formattedMs = str_pad($milliseconds, 2, '0', STR_PAD_LEFT);
 
                         return "{$minutes}:{$seconds}.{$formattedMs}";
+                    })
+                    ->rule(function () {
+                        return function (string $attribute, $value, \Closure $fail) {
+                            if (!preg_match('/^\d+:\d{2}\.\d{2}$/', $value)) {
+                                $fail('Invalid format. Use min:sec.ms like 1:23.45');
+                            }
+                        };
                     })
             ]);
     }
