@@ -53,13 +53,16 @@ class PenaltiesRelationManager extends RelationManager
                             ->numeric()
                             ->helperText('Up to 99 minutes')
                             ->live(onBlur: true)
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $totalMs = (int) $get('penalty_amount');
+                                $minutes = floor($totalMs / 1000 / 60);
+                                $set('penalty_minutes', $minutes > 0 ? $minutes : null);
+                            })
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 $minutes = (int) $state;
                                 $seconds = (int) $get('penalty_seconds');
                                 $milliseconds = (int) $get('penalty_milliseconds');
-
-                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
-                                $set('penalty_amount', $totalMs);
+                                $set('penalty_amount', ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds);
                             }),
 
                         Forms\Components\TextInput::make('penalty_seconds')
@@ -67,15 +70,19 @@ class PenaltiesRelationManager extends RelationManager
                             ->placeholder('Enter seconds')
                             ->mask(99)
                             ->numeric()
+                            ->maxValue(59)
                             ->helperText('Up to 59 seconds')
                             ->live(onBlur: true)
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $totalMs = (int) $get('penalty_amount');
+                                $seconds = floor(($totalMs / 1000) % 60);
+                                $set('penalty_seconds', $seconds > 0 ? $seconds : null);
+                            })
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 $minutes = (int) $get('penalty_minutes');
                                 $seconds = (int) $state;
                                 $milliseconds = (int) $get('penalty_milliseconds');
-
-                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
-                                $set('penalty_amount', $totalMs);
+                                $set('penalty_amount', ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds);
                             }),
 
                         Forms\Components\TextInput::make('penalty_milliseconds')
@@ -85,19 +92,21 @@ class PenaltiesRelationManager extends RelationManager
                             ->numeric()
                             ->helperText('Up to 999 milliseconds')
                             ->live(onBlur: true)
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $totalMs = (int) $get('penalty_amount');
+                                $milliseconds = $totalMs % 1000;
+                                $set('penalty_milliseconds', $milliseconds > 0 ? $milliseconds : null);
+                            })
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 $minutes = (int) $get('penalty_minutes');
                                 $seconds = (int) $get('penalty_seconds');
                                 $milliseconds = (int) $state;
-
-                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
-                                $set('penalty_amount', $totalMs);
+                                $set('penalty_amount', ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds);
                             }),
                     ])->columns(3),
 
-                Forms\Components\TextInput::make('penalty_amount')
+                Forms\Components\Hidden::make('penalty_amount')
                     ->label('Total Penalty (ms)')
-                    ->disabled()
                     ->helperText('This value is automatically calculated.'),
             ]);
     }
