@@ -42,7 +42,7 @@ class RallySponsorsRelationManager extends RelationManager
                     ->searchable()
                     ->grow()
                     ->label('Sponsorship Type')
-                    ->color(Color::Orange),
+                    ->color(Color::Sky),
             ])
             ->striped()
             ->defaultSort('name')
