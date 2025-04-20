@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
@@ -214,7 +215,21 @@ class StageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SplitsRelationManager::class,
+            RelationGroup::make('Splits and Split Times', [
+                RelationManagers\SplitsRelationManager::class,
+            ]),
+            RelationGroup::make('Start times', [
+                RelationManagers\StartTimesRelationManager::class,
+            ]),
+            RelationGroup::make('Stage Results', [
+                //todo change to corect one
+                RelationManagers\SplitsRelationManager::class,
+            ]),
+            RelationGroup::make('Penalties and Retirements', [
+                //todo change to correct one
+                // maybe move retirements to rally resource
+                RelationManagers\SplitsRelationManager::class,
+            ]),
         ];
     }
 
