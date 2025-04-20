@@ -41,6 +41,7 @@ class RallySponsorsRelationManager extends RelationManager
                 TextColumn::make('type')
                     ->searchable()
                     ->grow()
+                    ->badge()
                     ->label('Sponsorship Type')
                     ->color(Color::Sky),
             ])
