@@ -11,9 +11,7 @@ use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 
 class RallyClassesRelationManager extends RelationManager
@@ -24,9 +22,7 @@ class RallyClassesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('class_name')
-                    ->required()
-                    ->maxLength(255),
+                //
             ]);
     }
 
@@ -54,7 +50,7 @@ class RallyClassesRelationManager extends RelationManager
                 Tables\Actions\AttachAction::make()
                     ->form([
                         Forms\Components\Select::make('class_id')
-                            ->label('Select a Class')
+                            ->label('Select Classes')
                             ->options(function ($state) {
                                 $attachedClasses = $this->ownerRecord->rallyClasses->pluck('id');
 
@@ -73,19 +69,24 @@ class RallyClassesRelationManager extends RelationManager
                                     ];
                                 });
                             })
+                            ->multiple()
                             ->searchable()
                             ->required()
-                            ->helperText('Only Class not yet added to this rally are listed.'),
+                            ->helperText('Select multiple classes to add to this rally.')
                     ])
                     ->action(function (array $data, RelationManager $livewire) {
-                        RallyClass::create([
-                            'rally_id' => $livewire->getOwnerRecord()->id,
-                            'class_id' => $data['class_id'],
-                        ]);
+                        $rallyId = $livewire->getOwnerRecord()->id;
+
+                        foreach ($data['class_id'] as $classId) {
+                            RallyClass::create([
+                                'rally_id' => $rallyId,
+                                'class_id' => $classId,
+                            ]);
+                        }
                     })
-                    ->label('Add Class')
+                    ->label('Add Classes')
                     ->color('primary')
-                    ->modalHeading('Add a Class to This Rally')
+                    ->modalHeading('Add Classes to This Rally')
                     ->modalSubmitActionLabel('Add'),
             ])
             ->actions([
