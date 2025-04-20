@@ -92,6 +92,7 @@ class StartTimesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->recordTitle('Start Time')
             ->columns([
                 Tables\Columns\TextColumn::make('crew')
                     ->label('Driver & Co-Driver')
@@ -115,7 +116,8 @@ class StartTimesRelationManager extends RelationManager
             ->defaultSort('start_time')
             ->striped()
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Add Start Time'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

@@ -225,10 +225,8 @@ class StageResource extends Resource
                 //todo change to corect one
                 RelationManagers\SplitsRelationManager::class,
             ]),
-            RelationGroup::make('Penalties and Retirements', [
-                //todo change to correct one
-                // maybe move retirements to rally resource
-                RelationManagers\SplitsRelationManager::class,
+            RelationGroup::make('Penalties', [
+                RelationManagers\PenaltiesRelationManager::class,
             ]),
         ];
     }
