@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RallyResource\RelationManagers;
 
 use App\Models\GroupClass;
+use App\Models\RallyClass;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -13,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class RallyClassesRelationManager extends RelationManager
 {
@@ -75,9 +77,11 @@ class RallyClassesRelationManager extends RelationManager
                             ->required()
                             ->helperText('Only Class not yet added to this rally are listed.'),
                     ])
-                    ->action(function (array $data) {
-                        $ownerRecord = $this->ownerRecord;
-                        $ownerRecord->rallyClasses()->attach($data['class_id']);
+                    ->action(function (array $data, RelationManager $livewire) {
+                        RallyClass::create([
+                            'rally_id' => $livewire->getOwnerRecord()->id,
+                            'class_id' => $data['class_id'],
+                        ]);
                     })
                     ->label('Add Class')
                     ->color('primary')
@@ -86,10 +90,23 @@ class RallyClassesRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\DetachAction::make()
-                    ->label('Remove'),
+                    ->label('Remove')
+                    ->action(function (Model $record, RelationManager $livewire) {
+                        RallyClass::where('rally_id', $livewire->getOwnerRecord()->id)
+                            ->where('class_id', $record->id)
+                            ->first()?->delete();
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\DetachBulkAction::make('Remove Selected'),
+                Tables\Actions\DetachBulkAction::make()
+                    ->label('Remove Selected')
+                    ->action(function (Collection $records, RelationManager $livewire) {
+                        foreach ($records as $record) {
+                            RallyClass::where('rally_id', $livewire->getOwnerRecord()->id)
+                                ->where('class_id', $record->id)
+                                ->first()?->delete();
+                        }
+                    }),
             ]);
     }
 }
