@@ -44,42 +44,61 @@ class PenaltiesRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255),
 
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\TextInput::make('penalty_minutes')
+                            ->label('Minutes')
+                            ->placeholder('Enter minutes')
+                            ->mask(99)
+                            ->numeric()
+                            ->helperText('Up to 99 minutes')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                $minutes = (int) $state;
+                                $seconds = (int) $get('penalty_seconds');
+                                $milliseconds = (int) $get('penalty_milliseconds');
+
+                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
+                                $set('penalty_amount', $totalMs);
+                            }),
+
+                        Forms\Components\TextInput::make('penalty_seconds')
+                            ->label('Seconds')
+                            ->placeholder('Enter seconds')
+                            ->mask(99)
+                            ->numeric()
+                            ->helperText('Up to 59 seconds')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                $minutes = (int) $get('penalty_minutes');
+                                $seconds = (int) $state;
+                                $milliseconds = (int) $get('penalty_milliseconds');
+
+                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
+                                $set('penalty_amount', $totalMs);
+                            }),
+
+                        Forms\Components\TextInput::make('penalty_milliseconds')
+                            ->label('Milliseconds')
+                            ->placeholder('Enter milliseconds')
+                            ->mask(999)
+                            ->numeric()
+                            ->helperText('Up to 999 milliseconds')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                $minutes = (int) $get('penalty_minutes');
+                                $seconds = (int) $get('penalty_seconds');
+                                $milliseconds = (int) $state;
+
+                                $totalMs = ($minutes * 60 * 1000) + ($seconds * 1000) + $milliseconds;
+                                $set('penalty_amount', $totalMs);
+                            }),
+                    ])->columns(3),
+
                 Forms\Components\TextInput::make('penalty_amount')
-                    ->label('Penalty Time (min:sec.ms)')
-                    ->placeholder('e.g. 1:23.45')
-                    ->helperText('Enter time in format: min:sec.ms (e.g. 2:05.34)')
-                    ->required()
-                    ->mask('9:99.99')
-                    ->suffix('min:sec.ms')
-                    ->dehydrateStateUsing(function ($state) {
-                        if (!preg_match('/^(\d+):(\d{2})\.(\d{2})$/', $state, $matches)) {
-                            return null;
-                        }
-
-                        $minutes = (int)$matches[1];
-                        $seconds = (int)$matches[2];
-                        $hundredths = (int)$matches[3];
-
-                        return ($minutes * 60 * 1000) + ($seconds * 1000) + ($hundredths * 10);
-                    })
-                    ->formatStateUsing(function ($state) {
-                        if (!is_numeric($state)) return $state;
-
-                        $totalSeconds = floor($state / 1000);
-                        $milliseconds = floor(($state % 1000) / 10);
-                        $minutes = floor($totalSeconds / 60);
-                        $seconds = str_pad($totalSeconds % 60, 2, '0', STR_PAD_LEFT);
-                        $formattedMs = str_pad($milliseconds, 2, '0', STR_PAD_LEFT);
-
-                        return "{$minutes}:{$seconds}.{$formattedMs}";
-                    })
-                    ->rule(function () {
-                        return function (string $attribute, $value, \Closure $fail) {
-                            if (!preg_match('/^\d+:\d{2}\.\d{2}$/', $value)) {
-                                $fail('Invalid format. Use min:sec.ms like 1:23.45');
-                            }
-                        };
-                    })
+                    ->label('Total Penalty (ms)')
+                    ->disabled()
+                    ->helperText('This value is automatically calculated.'),
             ]);
     }
 
@@ -104,18 +123,29 @@ class PenaltiesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('penalty_amount')
                     ->label('Penalty Amount')
-                    ->tooltip('Time format: min:sec.ms')
                     ->formatStateUsing(function ($record) {
                         $ms = $record->penalty_amount;
 
                         $totalSeconds = floor($ms / 1000);
                         $milliseconds = floor(($ms % 1000) / 10);
-
                         $minutes = floor($totalSeconds / 60);
-                        $seconds = str_pad($totalSeconds % 60, 2, '0', STR_PAD_LEFT);
-                        $formattedMs = str_pad($milliseconds, 2, '0', STR_PAD_LEFT);
+                        $seconds = $totalSeconds % 60;
 
-                        return "{$minutes}:{$seconds}.{$formattedMs}";
+                        $timeComponents = [];
+
+                        if ($minutes > 0) {
+                            $timeComponents[] = "{$minutes}min";
+                        }
+
+                        if ($seconds > 0) {
+                            $timeComponents[] = "{$seconds}sec";
+                        }
+
+                        if ($milliseconds > 0) {
+                            $timeComponents[] = "{$milliseconds}ms";
+                        }
+
+                        return implode(' ', $timeComponents);
                     })
             ])
             ->headerActions([
