@@ -19,4 +19,8 @@ class GroupClass extends Model
         return $this->belongsTo(Group::class);
     }
 
+    public function rallies()
+    {
+        return $this->belongsToMany(Rally::class, 'rally_classes', 'class_id', 'rally_id');
+    }
 }
