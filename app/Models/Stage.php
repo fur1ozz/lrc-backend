@@ -36,5 +36,10 @@ class Stage extends Model
     {
         return $this->hasMany(Penalties::class);
     }
+
+    public function stageResults()
+    {
+        return $this->hasMany(StageResults::class);
+    }
 }
 

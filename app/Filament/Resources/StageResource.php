@@ -222,8 +222,7 @@ class StageResource extends Resource
                 RelationManagers\StartTimesRelationManager::class,
             ]),
             RelationGroup::make('Stage Results', [
-                //todo change to corect one
-                RelationManagers\SplitsRelationManager::class,
+                RelationManagers\StageResultsRelationManager::class,
             ]),
             RelationGroup::make('Penalties', [
                 RelationManagers\PenaltiesRelationManager::class,
