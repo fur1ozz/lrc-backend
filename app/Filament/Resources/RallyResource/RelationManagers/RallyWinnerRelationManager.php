@@ -28,7 +28,7 @@ class RallyWinnerRelationManager extends RelationManager
                     ->schema([
                         Select::make('crew_id')
                             ->label('Crew')
-                            ->options(fn (callable $get) => Crew::where('rally_id', $get('rally_id'))
+                            ->options(fn () => Crew::where('rally_id', $this->getOwnerRecord()->id)
                                 ->with(['driver', 'coDriver'])
                                 ->orderByRaw('is_historic ASC, crew_number_int ASC')
                                 ->get()
@@ -40,10 +40,7 @@ class RallyWinnerRelationManager extends RelationManager
                             ->required()
                             ->placeholder('Select a crew')
                             ->helperText('Select a crew from this rally')
-                            ->disabled(fn ($get) => !$get('rally_id'))
-                            ->rule(function (callable $get) {
-                                return 'exists:crews,id,rally_id,' . $get('rally_id');
-                            }),
+                            ->rule('exists:crews,id'),
 
                         Forms\Components\Textarea::make('feedback')
                             ->required()
