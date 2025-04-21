@@ -86,4 +86,9 @@ class Rally extends Model
     {
         return $this->belongsToMany(GroupClass::class, 'rally_classes', 'rally_id', 'class_id');
     }
+
+    public function retirements()
+    {
+        return $this->hasMany(Retirement::class);
+    }
 }

@@ -258,7 +258,8 @@ class RallyResource extends Resource
             RelationGroup::make('Crews', [
                 //
             ]),
-            RelationGroup::make('Results', [
+            RelationGroup::make('Results and Retirements', [
+                RelationManagers\RetirementsRelationManager::class,
                 // probably only overall results with auto calculation button (calculate/recalculate)
                 // maybe retirements here
             ]),
