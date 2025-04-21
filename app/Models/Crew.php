@@ -59,5 +59,11 @@ class Crew extends Model
         return $this->belongsToMany(GroupClass::class, 'crew_class_involvements', 'crew_id', 'class_id')
             ->withTimestamps();
     }
+
+    public function crewGroups()
+    {
+        return $this->belongsToMany(Group::class, 'crew_group_involvements', 'crew_id', 'group_id')
+            ->withTimestamps();
+    }
 }
 

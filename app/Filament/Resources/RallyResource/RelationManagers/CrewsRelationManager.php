@@ -325,15 +325,44 @@ class CrewsRelationManager extends RelationManager
             )
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Add Crew'),
+                    ->label('Add Crew')
+                    ->after(function (Model $record) {
+                        $this->syncGroupInvolvements($record);
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->color(Color::Sky),
+                    ->color(Color::Sky)
+                    ->after(function (Model $record) {
+                        $this->syncGroupInvolvements($record);
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
+    }
+
+    protected function syncGroupInvolvements(Model $crew): void
+    {
+
+        $attachedClasses = $crew->classes()->with('group')->get();
+
+        $groupIds = $attachedClasses
+            ->pluck('group_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $crew->crewGroups()
+            ->whereNotIn('group_id', $groupIds)
+            ->delete();
+
+        foreach ($groupIds as $groupId) {
+            \App\Models\CrewGroupInvolvement::firstOrCreate([
+                'crew_id' => $crew->id,
+                'group_id' => $groupId,
+            ]);
+        }
     }
 }
