@@ -31,9 +31,9 @@ class CrewsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} {$record->surname} ({$record->nationality}) - ID: {$record->id}")
                     ->searchable()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')->required(),
-                        Forms\Components\TextInput::make('surname')->required(),
-                        Forms\Components\TextInput::make('nationality')->required(),
+                        Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('surname')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('nationality')->required()->maxLength(2),
                     ])
                     ->required()
                     ->rules(function (Get $get, RelationManager $livewire) {
@@ -64,9 +64,9 @@ class CrewsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} {$record->surname} ({$record->nationality}) - ID: {$record->id}")
                     ->searchable()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')->required(),
-                        Forms\Components\TextInput::make('surname')->required(),
-                        Forms\Components\TextInput::make('nationality')->required(),
+                        Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('surname')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('nationality')->required()->maxLength(2),
                     ])
                     ->required()
                     ->helperText('Select an existing co-driver or create a new one. The co-driver cannot be the same person as the driver.')
@@ -97,6 +97,24 @@ class CrewsRelationManager extends RelationManager
                         ];
                     }),
 
+                Forms\Components\Select::make('team_id')
+                    ->label('Team')
+                    ->relationship('team', 'team_name', fn ($query) => $query->orderBy('team_name'))
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->team_name} - ID: {$record->id}")
+                    ->searchable()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('team_name')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('manager_name')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('manager_contact')->required()->maxLength(255),
+                    ])
+                    ->required()
+                    ->helperText('Select an existing team or create a new one'),
+
+                Forms\Components\TextInput::make('car')
+                    ->required()
+                    ->maxLength(255)
+                    ->placeholder('Mitsubishi Evo IX'),
+
                 Forms\Components\TextInput::make('crew_number_int')
                     ->required()
                     ->numeric()
@@ -109,11 +127,6 @@ class CrewsRelationManager extends RelationManager
                     ->onColor('warning')
                     ->inline(false)
                     ->helperText('Determines if the crew participates in Historic category'),
-
-                Forms\Components\TextInput::make('car')
-                    ->required()
-                    ->maxLength(255)
-                    ->placeholder('Mitsubishi Evo IX'),
 
                 Forms\Components\ToggleButtons::make('drive_type')
                     ->options([
@@ -128,7 +141,7 @@ class CrewsRelationManager extends RelationManager
                     ])
                     ->inline()
                     ->required()
-                    ->label('Road Surface'),
+                    ->label('Drive Type'),
 
                 Forms\Components\Select::make('drive_class')
                     ->label('Drive Class')
@@ -156,7 +169,7 @@ class CrewsRelationManager extends RelationManager
                     })
                     ->searchable()
                     ->required()
-                    ->helperText('Select the class this crew belongs to.'),
+                    ->helperText('Select the main class this crew participates in.'),
 
             ]);
     }
