@@ -65,6 +65,9 @@ class StageResultsRelationManager extends RelationManager
                                 $seconds = (int) $get('time_seconds');
                                 $ms2 = (int) $get('time_milliseconds');
                                 $set('time_taken', ($minutes * 60 * 1000) + ($seconds * 1000) + ($ms2 * 10));
+
+                                $this->updateAvgSpeed($get, $set);
+
                             }),
 
                         Forms\Components\TextInput::make('time_seconds')
@@ -85,6 +88,9 @@ class StageResultsRelationManager extends RelationManager
                                 $seconds = (int) $state;
                                 $ms2 = (int) $get('time_milliseconds');
                                 $set('time_taken', ($minutes * 60 * 1000) + ($seconds * 1000) + ($ms2 * 10));
+
+                                $this->updateAvgSpeed($get, $set);
+
                             }),
 
                         Forms\Components\TextInput::make('time_milliseconds')
@@ -105,10 +111,21 @@ class StageResultsRelationManager extends RelationManager
                                 $seconds = (int) $get('time_seconds');
                                 $ms2 = (int) $state;
                                 $set('time_taken', ($minutes * 60 * 1000) + ($seconds * 1000) + ($ms2 * 10));
+
+                                $this->updateAvgSpeed($get, $set);
                             }),
 
                     ])
                     ->columns(3),
+
+                Forms\Components\TextInput::make('avg_speed')
+                    ->label('Average Speed (km/h)')
+                    ->readonly()
+                    ->helperText('Automatically calculated')
+                    ->formatStateUsing(function ($state) {
+                        return number_format($state, 2);
+                    })
+                    ->rule('gt:0'),
 
                 Forms\Components\Placeholder::make('info_text')
                     ->label('')
@@ -213,5 +230,21 @@ class StageResultsRelationManager extends RelationManager
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
+    }
+
+    protected function updateAvgSpeed(callable $get, callable $set)
+    {
+        $time_taken = $get('time_taken');
+        $stage = $this->getOwnerRecord();
+        $distance_km = $stage->distance_km;
+
+        if ($time_taken > 0 && $distance_km > 0) {
+            $time_taken_in_hours = $time_taken / (1000 * 3600);
+            $avg_speed = $distance_km / $time_taken_in_hours;
+
+            $avg_speed = round($avg_speed, 2);
+
+            $set('avg_speed', $avg_speed);
+        }
     }
 }
