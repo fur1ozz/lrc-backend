@@ -204,10 +204,19 @@ class CrewsRelationManager extends RelationManager
                         $rally = $livewire->getOwnerRecord();
                         if (! $rally) return [];
 
-                        return \App\Models\RallyClass::with('class')
+                        $rallyClasses = \App\Models\RallyClass::with('class.group')
                             ->where('rally_id', $rally->id)
-                            ->get()
-                            ->pluck('class.class_name', 'class_id');
+                            ->get();
+
+                        return $rallyClasses->groupBy(fn ($rc) => $rc->class->group->group_name ?? 'Other')
+                            ->mapWithKeys(function ($grouped, $groupName) {
+                                return [
+                                    $groupName => $grouped->mapWithKeys(function ($rallyClass) {
+                                        $class = $rallyClass->class;
+                                        return [$class->id => $class->class_name];
+                                    }),
+                                ];
+                            });
                     })
                     ->helperText('Select the classes this crew will participate in')
                     ->preload()
@@ -270,6 +279,7 @@ class CrewsRelationManager extends RelationManager
                     ->formatStateUsing(fn ($state, Model $record) => $record->classes->pluck('class_name')->join(', '))
                     ->wrap()
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
+                    ->toggleable()
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('is_historic')
