@@ -36,10 +36,11 @@ class CrewsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('nationality')->required()->maxLength(2),
                     ])
                     ->required()
-                    ->rules(function (Get $get, RelationManager $livewire) {
+                    ->rules(function (Get $get) {
                         return [
-                            function ($attribute, $value, Closure $fail) use ($livewire) {
-                                $rally = $livewire->getOwnerRecord();
+                            function ($attribute, $value, Closure $fail) use ($get) {
+                                $rally = $this->getOwnerRecord();
+                                $crewId = $get('id');
 
                                 if (! $rally || ! $value) return;
 
@@ -48,6 +49,7 @@ class CrewsRelationManager extends RelationManager
                                         $query->where('driver_id', $value)
                                             ->orWhere('co_driver_id', $value);
                                     })
+                                    ->when($crewId, fn ($query) => $query->where('id', '!=', $crewId))
                                     ->first();
 
                                 if ($existingCrew) {
@@ -70,16 +72,17 @@ class CrewsRelationManager extends RelationManager
                     ])
                     ->required()
                     ->helperText('Select an existing co-driver or create a new one. The co-driver cannot be the same person as the driver.')
-                    ->rules(function (Get $get, RelationManager $livewire) {
+                    ->rules(function (Get $get) {
                         return [
-                            function ($attribute, $value, Closure $fail) use ($get, $livewire) {
+                            function ($attribute, $value, Closure $fail) use ($get) {
                                 $driverId = $get('driver_id');
                                 if ($value === $driverId) {
                                     $fail('The co-driver cannot be the same as the driver.');
                                     return;
                                 }
 
-                                $rally = $livewire->getOwnerRecord();
+                                $rally = $this->getOwnerRecord();
+                                $crewId = $get('id');
 
                                 if (! $rally || ! $value) return;
 
@@ -88,6 +91,7 @@ class CrewsRelationManager extends RelationManager
                                         $query->where('driver_id', $value)
                                             ->orWhere('co_driver_id', $value);
                                     })
+                                    ->when($crewId, fn ($query) => $query->where('id', '!=', $crewId))
                                     ->first();
 
                                 if ($existingCrew) {
@@ -120,7 +124,28 @@ class CrewsRelationManager extends RelationManager
                     ->numeric()
                     ->label('Crew Number')
                     ->rules(['max:300'])
-                    ->helperText('Max value of crew number is 300'),
+                    ->helperText('Max value of crew number is 300')
+                    ->rules([
+                        function (callable $get) {
+                            return function (string $attribute, $value, Closure $fail) use ($get) {
+                                $rally = $this->getOwnerRecord();
+                                $isHistoric = $get('is_historic');
+                                $crewId = $get('id');
+
+                                if (! $rally || $value === null) return;
+
+                                $exists = $rally->crews()
+                                    ->where('crew_number_int', $value)
+                                    ->where('is_historic', $isHistoric)
+                                    ->when($crewId, fn ($query) => $query->where('id', '!=', $crewId))
+                                    ->exists();
+
+                                if ($exists) {
+                                    $fail("Crew number {$value} is already used by Crew ID: {$crewId}");
+                                }
+                            };
+                        },
+                    ]),
 
                 Forms\Components\Toggle::make('is_historic')
                     ->label('Historic')
