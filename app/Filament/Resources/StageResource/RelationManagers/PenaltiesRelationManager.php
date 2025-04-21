@@ -106,8 +106,19 @@ class PenaltiesRelationManager extends RelationManager
                     ])->columns(3),
 
                 Forms\Components\Hidden::make('penalty_amount')
-                    ->label('Total Penalty (ms)')
-                    ->helperText('This value is automatically calculated.'),
+                    ->required()
+                    ->rule(['numeric', 'min:10']),
+
+                Forms\Components\Placeholder::make('penalty_error_display')
+                    ->label('')
+                    ->content(fn ($get) => (int) $get('penalty_amount') < 10 ? 'The penalty must be at least 10 milliseconds.' : null)
+                    ->visible(fn ($get) => (int) $get('penalty_amount') < 10)
+                    ->extraAttributes(function ($get) {
+                        $isEditing = !empty($get('id'));
+                        $errorColor = $isEditing ? 'color: red; font-weight: bold;' : 'color: yellow; font-weight: bold;';
+
+                        return ['style' => $errorColor];
+                    }),
             ]);
     }
 
