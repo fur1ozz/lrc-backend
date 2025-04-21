@@ -53,5 +53,11 @@ class Crew extends Model
     {
         return $this->hasMany(StageResults::class, 'crew_id');
     }
+
+    public function classes()
+    {
+        return $this->belongsToMany(GroupClass::class, 'crew_class_involvements', 'crew_id', 'class_id')
+            ->withTimestamps();
+    }
 }
 

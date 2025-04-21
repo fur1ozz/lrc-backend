@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\RallyResource\RelationManagers;
 
 use App\Enums\DriveTypeEnum;
-use App\Enums\RoadSurfaceEnum;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,6 +11,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -196,6 +196,24 @@ class CrewsRelationManager extends RelationManager
                     ->required()
                     ->helperText('Select the main class this crew participates in.'),
 
+                Forms\Components\Select::make('classes')
+                    ->label('Additional Classes')
+                    ->multiple()
+                    ->relationship('classes', 'class_name')
+                    ->options(function (RelationManager $livewire) {
+                        $rally = $livewire->getOwnerRecord();
+                        if (! $rally) return [];
+
+                        return \App\Models\RallyClass::with('class')
+                            ->where('rally_id', $rally->id)
+                            ->get()
+                            ->pluck('class.class_name', 'class_id');
+                    })
+                    ->helperText('Select the classes this crew will participate in')
+                    ->preload()
+                    ->searchable()
+                    ->columnSpanFull(),
+
             ]);
     }
 
@@ -235,9 +253,6 @@ class CrewsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('drive_type')
                     ->label('Drive Type')
-                    ->alignCenter(),
-
-                Tables\Columns\TextColumn::make('drive_type')
                     ->alignCenter()
                     ->badge()
                     ->color(fn (DriveTypeEnum $state): array => match ($state) {
@@ -249,6 +264,12 @@ class CrewsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('drive_class')
                     ->label('Main Drive Class')
                     ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('classes.class_name')
+                    ->label('All Classes')
+                    ->formatStateUsing(fn ($state, Model $record) => $record->classes->pluck('class_name')->join(', '))
+                    ->wrap()
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('is_historic')

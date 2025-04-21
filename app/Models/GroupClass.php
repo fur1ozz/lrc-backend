@@ -23,4 +23,10 @@ class GroupClass extends Model
     {
         return $this->belongsToMany(Rally::class, 'rally_classes', 'class_id', 'rally_id');
     }
+
+    public function crews()
+    {
+        return $this->belongsToMany(Crew::class, 'crew_class_involvements', 'class_id', 'crew_id')
+            ->withTimestamps();
+    }
 }
