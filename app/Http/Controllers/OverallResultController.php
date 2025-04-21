@@ -8,10 +8,12 @@ use App\Models\Participant;
 use App\Models\Penalties;
 use App\Models\Rally;
 use App\Models\RallyClass;
+use App\Models\Retirement;
 use App\Models\Stage;
 use App\Models\StageResults;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OverallResultController extends Controller
 {
@@ -135,69 +137,6 @@ class OverallResultController extends Controller
         ];
 
         return response()->json($response);
-    }
-
-
-    public function calculateOverallResults($rallyId)
-    {
-        $rally = Rally::where('id', $rallyId)->first();
-
-        if (!$rally) {
-            return response()->json(['message' => 'Rally not found'], 404);
-        }
-
-        $stages = Stage::where('rally_id', $rallyId)->orderBy('stage_number')->get();
-
-        $hasStageResults = StageResults::whereIn('stage_id', $stages->pluck('id'))->exists();
-
-        if (!$hasStageResults) {
-            return response()->json(['message' => 'No stage results available to calculate overall results'], 404);
-        }
-
-        $crews = Crew::whereHas('stageResults', function ($query) use ($rallyId) {
-            $query->whereHas('stage', function ($stageQuery) use ($rallyId) {
-                $stageQuery->where('rally_id', $rallyId);
-            });
-        })->get();
-
-        foreach ($crews as $crew) {
-            $totalTime = 0;
-            $totalPenalties = 0;
-
-            foreach ($stages as $stage) {
-                $stageResult = $crew->stageResults()->where('stage_id', $stage->id)->first();
-
-                if ($stageResult) {
-                    $timeTaken = $stageResult->time_taken;
-                    $totalTime += $timeTaken;
-
-                    $penalties = Penalties::where('crew_id', $crew->id)
-                        ->where('stage_id', $stage->id)
-                        ->get();
-
-                    $penaltyTime = 0;
-                    foreach ($penalties as $penalty) {
-                        $penaltyTime += $penalty->penalty_amount;
-                    }
-
-                    $totalPenalties += $penaltyTime;
-                }
-            }
-
-            $totalTimeWithPenalties = $totalTime + $totalPenalties;
-
-            OverallResult::updateOrCreate(
-                [
-                    'crew_id' => $crew->id,
-                    'rally_id' => $rallyId,
-                ],
-                [
-                    'total_time' => $totalTimeWithPenalties,
-                ]
-            );
-        }
-
-        return response()->json(['message' => 'Overall results calculated and saved successfully.']);
     }
 
     public function index()
