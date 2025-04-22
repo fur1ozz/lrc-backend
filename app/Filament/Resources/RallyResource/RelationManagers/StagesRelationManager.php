@@ -59,6 +59,7 @@ class StagesRelationManager extends RelationManager
                     ->label('Stage Name')
                     ->placeholder('Stage 1 of Rally Latvia')
                     ->columnSpan(3)
+                    ->maxLength(255)
                     ->required(),
 
                 TextInput::make('distance_km')

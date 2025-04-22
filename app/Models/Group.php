@@ -17,4 +17,10 @@ class Group extends Model
     {
         return $this->hasMany(GroupClass::class);
     }
+
+    public function crews()
+    {
+        return $this->belongsToMany(Crew::class, 'crew_group_involvements', 'group_id', 'crew_id')
+            ->withTimestamps();
+    }
 }

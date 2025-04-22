@@ -47,6 +47,7 @@ class NewsResource extends Resource
                         Section::make()
                             ->schema([
                                 Forms\Components\TextInput::make('title')
+                                    ->maxLength(255)
                                     ->required(),
 
                                 Forms\Components\Textarea::make('paragraph')

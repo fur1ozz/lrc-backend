@@ -18,7 +18,7 @@ class SponsorsController extends Controller
             return response()->json(['message' => 'Rally not found for this season'], 404);
         }
 
-        $sponsors = $rally->sponsors()->withPivot('type')->get();
+        $sponsors = $rally->rallySponsors()->withPivot('type')->get();
 
         return response()->json($sponsors->map(function ($sponsor) {
             return [

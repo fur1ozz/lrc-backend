@@ -23,13 +23,15 @@ class DocumentsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('name')
                     ->placeholder('e.g., Rally Regulations')
                     ->helperText('Documents are sorted alphabetically')
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
 
                 Forms\Components\TextInput::make('link')
                     ->placeholder('e.g., https://example.com/document-1.pdf')
                     ->helperText('Provide a valid URL linking to the document.')
                     ->url()
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 

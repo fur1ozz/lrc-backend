@@ -13,14 +13,19 @@ class DatabaseSeeder extends Seeder
             SeasonSeeder::class,
             GroupsClassesSeeder::class,
 
+            ChampionshipClassSeeder::class,
+
             RallySeeder::class,
             RallyGroupClassSeeder::class,
             StageSeeder::class,
             SplitSeeder::class,
 
-            CrewParticipantTeamSeeder::class,
-            CrewParticipantTeamHistoricSeeder::class,
+//            CrewParticipantTeamSeeder::class,
+//            CrewParticipantTeamHistoricSeeder::class,
+            RealisticCrewSeeder::class,
+            RealisticCrewHistoricSeeder::class,
             ExtendedCrewParticipationSeeder::class,
+
             StartTimeSeeder::class,
             NewsSeeder::class,
             FoldersAndDocumentsSeeder::class,

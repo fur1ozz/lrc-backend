@@ -77,8 +77,18 @@ class Rally extends Model
         return $this->hasMany(Crew::class);
     }
 
-    public function sponsors()
+    public function rallySponsors()
     {
-        return $this->belongsToMany(Sponsor::class, 'rally_sponsor');
+        return $this->belongsToMany(Sponsor::class, 'rally_sponsor')->withPivot('type');
+    }
+
+    public function rallyClasses()
+    {
+        return $this->belongsToMany(GroupClass::class, 'rally_classes', 'rally_id', 'class_id');
+    }
+
+    public function retirements()
+    {
+        return $this->hasMany(Retirement::class);
     }
 }

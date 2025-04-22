@@ -6,6 +6,7 @@ use App\Models\Rally;
 use App\Models\Stage;
 use App\Models\Crew;
 use App\Models\StageResults;
+use App\Models\Retirement;
 use Illuminate\Database\Seeder;
 
 class StageResultsSeeder extends Seeder
@@ -21,6 +22,15 @@ class StageResultsSeeder extends Seeder
 
             foreach ($crews as $crew) {
                 foreach ($stages as $stage) {
+                    $retirement = Retirement::where('crew_id', $crew->id)
+                        ->where('rally_id', $rally->id)
+                        ->where('stage_of_retirement', $stage->stage_number)
+                        ->first();
+
+                    if ($retirement) {
+                        continue;
+                    }
+
                     $distance = $stage->distance_km;
 
                     // random speed in km/h, rounded to 2 decimal places

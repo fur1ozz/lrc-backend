@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RallyClass;
+use App\Models\Retirement;
 use App\Models\StageResults;
 use Illuminate\Http\Request;
 use App\Models\Rally;
@@ -11,10 +13,11 @@ use App\Models\Participant;
 use App\Models\CrewGroupInvolvement;
 use App\Models\Group;
 use App\Models\Penalties;
+use Illuminate\Support\Facades\DB;
 
 class StageResultsController extends Controller
 {
-    public function getStageResultsBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber)
+    public function getStageResultsBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber, $classId = 'all')
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -33,10 +36,55 @@ class StageResultsController extends Controller
             return response()->json(['message' => 'No such stage exists'], 404);
         }
 
-        $results = StageResults::where('stage_id', $stage->id)->get();
+        $availableStageNumbers = Stage::where('rally_id', $rally->id)
+            ->orderBy('stage_number')
+            ->pluck('stage_number')
+            ->toArray();
+
         $stageCount = Stage::where('rally_id', $rally->id)->count();
 
+        if ($classId !== 'all') {
+            $classExistsInRally = RallyClass::where('rally_id', $rally->id)
+                ->where('class_id', $classId)
+                ->exists();
+
+            if (!$classExistsInRally) {
+                return response()->json(['message' => 'Class not found in this rally'], 404);
+            }
+
+            $crewIds = Crew::where('rally_id', $rally->id)->pluck('id');
+
+            $filteredCrewIds = DB::table('crew_class_involvements')
+                ->whereIn('crew_id', $crewIds)
+                ->where('class_id', $classId)
+                ->pluck('crew_id');
+
+            $results = StageResults::where('stage_id', $stage->id)
+                ->whereIn('crew_id', $filteredCrewIds)
+                ->get();
+        } else {
+            $results = StageResults::where('stage_id', $stage->id)->get();
+        }
+
         $sortedResults = $results->sortBy('time_taken')->values();
+
+        $rallyClasses = RallyClass::where('rally_id', $rally->id)
+            ->with(['class.group'])
+            ->get()
+            ->groupBy(fn ($rallyClass) => $rallyClass->class->group->id ?? 0)
+            ->map(function ($groupedClasses) {
+                $first = $groupedClasses->first();
+
+                return [
+                    'group_id' => $first->class->group->id ?? null,
+                    'group_name' => $first->class->group->group_name ?? 'Unknown',
+                    'classes' => $groupedClasses->map(fn ($rallyClass) => [
+                        'id' => $rallyClass->class->id,
+                        'name' => $rallyClass->class->class_name,
+                    ])->unique('id')->values(),
+                ];
+            })
+            ->values();
 
         $response = [
             'stage_id' => $stage->id,
@@ -45,6 +93,8 @@ class StageResultsController extends Controller
             'stage_start_time' => $stage->start_time,
             'stage_number' => $stage->stage_number,
             'stage_count' => $stageCount,
+            'available_stage_numbers' => $availableStageNumbers,
+            'rally_classes' => $rallyClasses,
             'results' => $sortedResults->map(function ($result, $index) use ($stage, $stageNumber, $rally, $sortedResults) {
                 $crew = Crew::find($result->crew_id);
 
@@ -69,7 +119,15 @@ class StageResultsController extends Controller
                     ];
                 });
 
-                $overallResult = $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id);
+                $retirement = Retirement::where('crew_id', $crew->id)
+                    ->where('rally_id', $rally->id)
+                    ->first();
+
+                $hasRetiredBeforeOrAtThisStage = $retirement && $retirement->stage_of_retirement <= $stageNumber;
+
+                $overallResult = !$hasRetiredBeforeOrAtThisStage
+                    ? $this->calculateOverallTimeAndPenalties($rally->id, $stageNumber, $crew->id)
+                    : null;
 
                 $timeTakenMs = $result->time_taken;
                 $firstTimeMs = $sortedResults->first()->time_taken ?? null;
@@ -102,10 +160,10 @@ class StageResultsController extends Controller
                     'time_taken' => lrc_formatMillisecondsTwoDigits($result->time_taken),
                     'time_dif_from_first' => $difFromFirst,
                     'penalties' => $penaltyDetails->isNotEmpty() ? $penaltyDetails : null,
-                    'overall_time_until_stage' => $overallResult['total_time'],
-                    'overall_penalties_until_stage' => $overallResult['total_penalties'],
-                    'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'],
-                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'],
+                    'overall_time_until_stage' => $overallResult['total_time'] ?? null,
+                    'overall_penalties_until_stage' => $overallResult['total_penalties'] ?? null,
+                    'overall_time_with_penalties_until_stage' => $overallResult['total_time_with_penalties'] ?? null,
+                    'overall_time_with_penalties_until_stage_ms' => $overallResult['total_time_with_penalties_ms'] ?? null,
                 ];
             })->values(),
         ];

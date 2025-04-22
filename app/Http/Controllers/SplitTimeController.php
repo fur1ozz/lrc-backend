@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Crew;
 use App\Models\Rally;
+use App\Models\RallyClass;
 use App\Models\Split;
 use App\Models\SplitTime;
 use App\Models\Stage;
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
 
 class SplitTimeController extends Controller
 {
-    public function getCrewSplitTimesBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber)
+    public function getCrewSplitTimesBySeasonYearRallyTagAndStageNumber($seasonYear, $rallyTag, $stageNumber, $classId = 'all')
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -22,6 +23,45 @@ class SplitTimeController extends Controller
 
         if (!$rally) {
             return response()->json(['message' => 'Rally not found for this season'], 404);
+        }
+
+        $rallyClasses = RallyClass::where('rally_id', $rally->id)
+            ->with(['class.group'])
+            ->get()
+            ->groupBy(fn ($rallyClass) => $rallyClass->class->group->id ?? 0)
+            ->map(function ($groupedClasses) {
+                $first = $groupedClasses->first();
+
+                return [
+                    'group_id' => $first->class->group->id ?? null,
+                    'group_name' => $first->class->group->group_name ?? 'Unknown',
+                    'classes' => $groupedClasses->map(fn ($rallyClass) => [
+                        'id' => $rallyClass->class->id,
+                        'name' => $rallyClass->class->class_name,
+                    ])->unique('id')->values(),
+                ];
+            })
+            ->values();
+
+        if ($classId !== 'all') {
+            $classExists = RallyClass::where('rally_id', $rally->id)
+                ->where('class_id', $classId)
+                ->exists();
+
+            if (!$classExists) {
+                return response()->json(['message' => 'Class not found in this rally'], 404);
+            }
+        }
+
+        $crewIds = null;
+        if ($classId !== 'all') {
+            $crewIds = Crew::where('rally_id', $rally->id)
+                ->whereIn('id', function ($query) use ($classId) {
+                    $query->select('crew_id')
+                        ->from('crew_class_involvements')
+                        ->where('class_id', $classId);
+                })
+                ->pluck('id');
         }
 
         $stage = Stage::where('rally_id', $rally->id)
@@ -37,7 +77,12 @@ class SplitTimeController extends Controller
             ]);
         }
 
-        $totalStages = Stage::where('rally_id', $rally->id)->count();
+        $availableStageNumbers = Stage::where('rally_id', $rally->id)
+            ->orderBy('stage_number')
+            ->pluck('stage_number')
+            ->toArray();
+
+        $stageCount = Stage::where('rally_id', $rally->id)->count();
 
         $splits = Split::where('stage_id', $stage->id)
             ->select('id', 'split_number', 'split_distance')
@@ -45,18 +90,25 @@ class SplitTimeController extends Controller
             ->get();
 
         $splitIds = $splits->pluck('id');
-        $splitTimes = SplitTime::whereIn('split_id', $splitIds)->get();
+        $splitTimesQuery = SplitTime::whereIn('split_id', $splitIds);
+        if ($crewIds !== null) {
+            $splitTimesQuery->whereIn('crew_id', $crewIds);
+        }
+        $splitTimes = $splitTimesQuery->get();
 
         if ($splits->isEmpty() || $splitTimes->isEmpty()) {
             return response()->json([
                 'splits' => $splits->isEmpty() ? [] : $splits,
                 'crew_times' => [],
-                'stage_count' => $totalStages,
+                'stage_count' => $stageCount,
+                'available_stage_numbers' => $availableStageNumbers,
+                'rally_classes' => $rallyClasses,
             ]);
         }
 
         // Get the fastest crew based on stage time
         $fastestStageResult = StageResults::where('stage_id', $stage->id)
+            ->when($crewIds !== null, fn($q) => $q->whereIn('crew_id', $crewIds))
             ->orderBy('time_taken', 'asc')
             ->first();
 
@@ -69,18 +121,20 @@ class SplitTimeController extends Controller
 
         $response = [];
 
-        $crews = Crew::whereIn('id', $splitTimes->pluck('crew_id')->unique())
+        $crewIdsToLoad = $splitTimes->pluck('crew_id')->unique();
+
+        $crews = Crew::whereIn('id', $crewIdsToLoad)
             ->with(['team', 'driver', 'coDriver'])
             ->get()
             ->keyBy('id');
 
-        $stageResults = StageResults::whereIn('crew_id', $splitTimes->pluck('crew_id')->unique())
+        $stageResults = StageResults::whereIn('crew_id', $crewIdsToLoad)
             ->where('stage_id', $stage->id)
             ->get()
             ->keyBy('crew_id');
 
         $startTimes = StartTime::where('stage_id', $stage->id)
-            ->whereIn('crew_id', $splitTimes->pluck('crew_id')->unique())
+            ->whereIn('crew_id', $crewIdsToLoad)
             ->get()
             ->keyBy('crew_id');
 
@@ -153,7 +207,9 @@ class SplitTimeController extends Controller
         return response()->json([
             'splits' => $splits,
             'crew_times' => array_values($response),
-            'stage_count' => $totalStages,
+            'stage_count' => $stageCount,
+            'available_stage_numbers' => $availableStageNumbers,
+            'rally_classes' => $rallyClasses,
         ]);
     }
 

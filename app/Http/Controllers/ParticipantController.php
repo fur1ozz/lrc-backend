@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Participant;
 use App\Models\Rally;
 use App\Models\Crew;
+use App\Models\RallyClass;
 use Illuminate\Http\Request;
 
 class ParticipantController extends Controller
@@ -31,7 +32,7 @@ class ParticipantController extends Controller
         return response()->json($participant, 201);
     }
 
-    public function getCrewDetailsBySeasonYearAndRallyTag($seasonYear, $rallyTag)
+    public function getCrewDetailsBySeasonYearAndRallyTag($seasonYear, $rallyTag, $classId = 'all')
     {
         $rally = Rally::where('rally_tag', $rallyTag)
             ->whereHas('season', function ($query) use ($seasonYear) {
@@ -42,10 +43,55 @@ class ParticipantController extends Controller
             return response()->json(['message' => 'Rally not found for this season'], 404);
         }
 
-        $crews = Crew::with(['team'])
+        $rallyClasses = RallyClass::where('rally_id', $rally->id)
+            ->with(['class.group'])
+            ->get()
+            ->groupBy(fn ($rallyClass) => $rallyClass->class->group->id ?? 0)
+            ->map(function ($groupedClasses) {
+                $first = $groupedClasses->first();
+
+                return [
+                    'group_id' => $first->class->group->id ?? null,
+                    'group_name' => $first->class->group->group_name ?? 'Unknown',
+                    'classes' => $groupedClasses->map(fn ($rallyClass) => [
+                        'id' => $rallyClass->class->id,
+                        'name' => $rallyClass->class->class_name,
+                    ])->unique('id')->values(),
+                ];
+            })
+            ->values();
+
+        if ($classId !== 'all') {
+            $classExists = RallyClass::where('rally_id', $rally->id)
+                ->where('class_id', $classId)
+                ->exists();
+
+            if (!$classExists) {
+                return response()->json(['message' => 'Class not found in this rally'], 404);
+            }
+        }
+
+        $crewIds = null;
+        if ($classId !== 'all') {
+            $crewIds = Crew::where('rally_id', $rally->id)
+                ->whereIn('id', function ($query) use ($classId) {
+                    $query->select('crew_id')
+                        ->from('crew_class_involvements')
+                        ->where('class_id', $classId);
+                })
+                ->pluck('id');
+        }
+
+        // Query crews
+        $crewsQuery = Crew::with(['team'])
             ->where('rally_id', $rally->id)
-            ->orderByRaw('is_historic ASC, crew_number_int ASC')
-            ->get();
+            ->orderByRaw('is_historic ASC, crew_number_int ASC');
+
+        if ($crewIds !== null) {
+            $crewsQuery->whereIn('id', $crewIds);
+        }
+
+        $crews = $crewsQuery->get();
 
         $crewWithParticipants = $crews->map(function ($crew) use ($rally) {
 
@@ -93,6 +139,9 @@ class ParticipantController extends Controller
             ];
         });
 
-        return response()->json($crewWithParticipants);
+        return response()->json([
+            'crew_details' => $crewWithParticipants,
+            'rally_classes' => $rallyClasses,
+        ]);
     }
 }

@@ -28,33 +28,19 @@ class RallyWinnerRelationManager extends RelationManager
                     ->schema([
                         Select::make('crew_id')
                             ->label('Crew')
-                            ->options(function () {
-                                $rallyId = $this->getOwnerRecord()->id;
-
-                                return Crew::where('rally_id', $rallyId)
-                                    ->with(['driver', 'coDriver'])
-                                    ->orderByRaw('
-                                        CASE
-                                            WHEN crew_number REGEXP "^[0-9]+$" THEN 0
-                                            ELSE 1
-                                        END ASC
-                                    ')
-                                    ->orderByRaw('CAST(REGEXP_REPLACE(crew_number, \'[^0-9]\', \'\') AS UNSIGNED) ASC')
-                                    ->orderByRaw('REGEXP_REPLACE(crew_number, \'[0-9]\', \'\') ASC')
-                                    ->get()
-                                    ->mapWithKeys(fn ($crew) => [
-                                        $crew->id => "{$crew->driver?->name} {$crew->driver?->surname} / {$crew->coDriver?->name} {$crew->coDriver?->surname} (Car: {$crew->car}, No: {$crew->crew_number})"
-                                    ])
-                                    ->toArray();
-                            })
+                            ->options(fn () => Crew::where('rally_id', $this->getOwnerRecord()->id)
+                                ->with(['driver', 'coDriver'])
+                                ->orderByRaw('is_historic ASC, crew_number_int ASC')
+                                ->get()
+                                ->mapWithKeys(fn ($crew) => [
+                                    $crew->id => "{$crew->driver?->name} {$crew->driver?->surname} / {$crew->coDriver?->name} {$crew->coDriver?->surname} (Car: {$crew->car}, No: {$crew->crew_number})"
+                                ])
+                                ->toArray())
                             ->searchable()
                             ->required()
                             ->placeholder('Select a crew')
                             ->helperText('Select a crew from this rally')
-                            ->rule(function () {
-                                $rallyId = $this->getOwnerRecord()->id;
-                                return "exists:crews,id,rally_id,{$rallyId}";
-                            }),
+                            ->rule('exists:crews,id'),
 
                         Forms\Components\Textarea::make('feedback')
                             ->required()

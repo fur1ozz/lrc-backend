@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
@@ -85,6 +86,7 @@ class StageResource extends Resource
                             ->label('Stage Name')
                             ->placeholder('Stage 1 of Rally Latvia')
                             ->columnSpan(3)
+                            ->maxLength(255)
                             ->required(),
 
                         TextInput::make('distance_km')
@@ -213,7 +215,18 @@ class StageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SplitsRelationManager::class,
+            RelationGroup::make('Splits and Split Times', [
+                RelationManagers\SplitsRelationManager::class,
+            ]),
+            RelationGroup::make('Start times', [
+                RelationManagers\StartTimesRelationManager::class,
+            ]),
+            RelationGroup::make('Stage Results', [
+                RelationManagers\StageResultsRelationManager::class,
+            ]),
+            RelationGroup::make('Penalties', [
+                RelationManagers\PenaltiesRelationManager::class,
+            ]),
         ];
     }
 
