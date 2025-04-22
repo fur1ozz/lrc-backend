@@ -56,7 +56,7 @@ class EditRally extends EditRecord
 
                         Notification::make()
                             ->title('Success')
-                            ->body('Overall results have been ' . ($existingResults ? 'recalculated' : 'calculated') . '.')
+                            ->body('Overall results have been ' . ($existingResults ? 'recalculated' : 'calculated') . ' for "' . $rally->rally_name . '"')
                             ->success()
                             ->send();
 
@@ -93,7 +93,7 @@ class EditRally extends EditRecord
 
                             Notification::make()
                                 ->title('Success')
-                                ->body('Points have been ' . ($existingPoints ? 'recalculated' : 'calculated') . '.')
+                                ->body('Championship points have been ' . ($existingPoints ? 'recalculated' : 'calculated') . ' for "' . $rally->rally_name . '"')
                                 ->success()
                                 ->send();
                         } catch (\Exception $e) {
