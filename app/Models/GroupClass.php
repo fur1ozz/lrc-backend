@@ -29,4 +29,9 @@ class GroupClass extends Model
         return $this->belongsToMany(Crew::class, 'crew_class_involvements', 'class_id', 'crew_id')
             ->withTimestamps();
     }
+
+    public function seasons()
+    {
+        return $this->belongsToMany(Season::class, 'championship_classes', 'class_id', 'season_id');
+    }
 }

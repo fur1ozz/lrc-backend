@@ -10,4 +10,9 @@ class Season extends Model
     use HasFactory;
 
     protected $fillable = ['year'];
+
+    public function championshipClasses()
+    {
+        return $this->belongsToMany(GroupClass::class, 'championship_classes', 'season_id', 'class_id');
+    }
 }

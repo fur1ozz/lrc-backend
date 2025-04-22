@@ -11,7 +11,6 @@ class ChampionshipClass extends Model
         'class_id',
     ];
 
-
     public function season()
     {
         return $this->belongsTo(Season::class);
