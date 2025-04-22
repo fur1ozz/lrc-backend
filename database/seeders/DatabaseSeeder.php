@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
             SplitTimesSeeder::class,
             OverallResultsSeeder::class,
 
+            ChampionshipPointsSeeder::class,
+
             // user
             UserSeeder::class,
         ]);
