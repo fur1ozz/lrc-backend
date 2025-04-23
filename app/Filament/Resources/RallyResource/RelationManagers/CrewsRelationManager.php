@@ -31,9 +31,21 @@ class CrewsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} {$record->surname} ({$record->nationality}) - ID: {$record->id}")
                     ->searchable()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('surname')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('nationality')->required()->maxLength(2),
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter first name'),
+
+                        Forms\Components\TextInput::make('surname')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter last name'),
+
+                        Forms\Components\TextInput::make('nationality')
+                            ->required()
+                            ->maxLength(2)
+                            ->placeholder('e.g., LV')
+                            ->helperText('Enter a 2-letter nationality code. Examples: LV, LT, EE, FI, SE'),
                     ])
                     ->required()
                     ->rules(function (Get $get) {
@@ -66,9 +78,21 @@ class CrewsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} {$record->surname} ({$record->nationality}) - ID: {$record->id}")
                     ->searchable()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('surname')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('nationality')->required()->maxLength(2),
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter first name'),
+
+                        Forms\Components\TextInput::make('surname')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter last name'),
+
+                        Forms\Components\TextInput::make('nationality')
+                            ->required()
+                            ->maxLength(2)
+                            ->placeholder('e.g., LV')
+                            ->helperText('Enter a 2-letter nationality code. Examples: LV, LT, EE, FI, SE'),
                     ])
                     ->required()
                     ->helperText('Select an existing co-driver or create a new one. The co-driver cannot be the same person as the driver.')
@@ -76,7 +100,7 @@ class CrewsRelationManager extends RelationManager
                         return [
                             function ($attribute, $value, Closure $fail) use ($get) {
                                 $driverId = $get('driver_id');
-                                if ($value === $driverId) {
+                                if ((int) $value === (int) $driverId) {
                                     $fail('The co-driver cannot be the same as the driver.');
                                     return;
                                 }
@@ -107,9 +131,21 @@ class CrewsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->team_name} - ID: {$record->id}")
                     ->searchable()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('team_name')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('manager_name')->required()->maxLength(255),
-                        Forms\Components\TextInput::make('manager_contact')->required()->maxLength(255),
+                        Forms\Components\TextInput::make('team_name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter team name'),
+
+                        Forms\Components\TextInput::make('manager_name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter team manager\'s full name'),
+
+                        Forms\Components\TextInput::make('manager_contact')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Enter manager contact info (phone or email)')
+                            ->helperText('Example: +371 12345678 or manager@example.com'),
                     ])
                     ->required()
                     ->helperText('Select an existing team or create a new one'),
