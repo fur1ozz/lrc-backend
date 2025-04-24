@@ -60,7 +60,8 @@ class SeasonResource extends Resource
                                                 })
                                                 ->join('')
                                         );
-                                    }),
+                                    })
+                                    ->hiddenOn('create'),
 
                                 Forms\Components\Select::make('championshipClasses')
                                     ->label('Local Championship Classes')
@@ -82,7 +83,8 @@ class SeasonResource extends Resource
                                     })
                                     ->helperText('Select this seasons classes, that will get included in local championship')
                                     ->preload()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->hiddenOn('create'),
                             ])->columns(2),
                     ])->columnSpanFull(),
             ]);
