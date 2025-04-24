@@ -22,10 +22,13 @@ class UserSeeder extends Seeder
             ]
         );
 
-        User::create([
-            'name' => 'Test Admin',
-            'email' => 'test.admin@example.com',
-            'password' => Hash::make('test.password.99'),
-        ]);
+        User::updateOrCreate(
+            ['id' => 2],
+            [
+                'name' => 'Test Admin',
+                'email' => 'test.admin@example.com',
+                'password' => Hash::make('test.password.99'),
+            ]
+        );
     }
 }
