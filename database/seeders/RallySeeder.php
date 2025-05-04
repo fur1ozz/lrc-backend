@@ -46,6 +46,10 @@ class RallySeeder extends Seeder
             'rally-aluksne-2025.png',
             'rally-sarma-2025.png',
             'rally-sprint-vidzeme-2025.png',
+            'rally-sprint-talsi-2025.png',
+            'rally-louna-eesti-2025.png',
+            'rally-paide-2025.png',
+            'rally-sprint-latvia-2025.png',
         ];
 
         foreach ($rallyImages as $image) {
@@ -188,7 +192,7 @@ class RallySeeder extends Seeder
                 'location' => 'lv',
                 'road_surface' => 'gravel',
                 'rally_img' => 'rally_images/rally-sprint-talsi-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-sprint-talsi-2025.png',
             ],
             [
                 'rally_name' => 'Rally LÕUNA-EESTI',
@@ -198,7 +202,7 @@ class RallySeeder extends Seeder
                 'location' => 'ee',
                 'road_surface' => 'gravel',
                 'rally_img' => 'rally_images/rally-louna-eesti-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-louna-eesti-2025.png',
             ],
             [
                 'rally_name' => 'Rallijs Paide',
@@ -208,7 +212,7 @@ class RallySeeder extends Seeder
                 'location' => 'lv',
                 'road_surface' => 'gravel',
                 'rally_img' => 'rally_images/rally-paide-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-paide-2025.png',
             ],
             [
                 'rally_name' => 'Rallijs Cēsis',
@@ -228,7 +232,7 @@ class RallySeeder extends Seeder
                 'location' => 'lv',
                 'road_surface' => 'tarmac',
                 'rally_img' => 'rally_images/rally-sprint-latvia-2025.png',
-                'rally_banner' => null,
+                'rally_banner' => 'rally_banners/rally-sprint-latvia-2025.png',
             ],
         ];
 
